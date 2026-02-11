@@ -7,6 +7,27 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | SS007 - Quotation Preparation | CAD↔D365 integration is mentioned but not architected — must be defined before development | [SS007 - Quotation Preparation](#ss007---quotation-preparation-3-gaps) |
+| 2 | **HIGH** | SS002 - DFI | Cross-system DFI hand-off mechanism undefined — clarify whether full data or reference link is needed | [SS002 - DFI](#ss002---dfi-gap---customization) |
+| 3 | **HIGH** | SS005 - Cost & Selling Price | Costing sheet design is foundational — must be finalized before any cost calculations; schedule dedicated workshop | [SS005 - Assembly Cost & Selling Price](#ss005---assembly-cost--selling-price-calculation-all-fit) |
+| 4 | **HIGH** | SS000 - Setup | Costing sheet and cost groups must be finalized before go-live — treat as high-priority setup item | [SS000 - Setup](#ss000---setup) |
+| 5 | **HIGH** | Cross-FRD Dependency | DFI flows from CRM (FRD01) to F&O (FRD02) — integration mechanism must be consistent across both FRDs | [Risk Flags](#risk-flags) |
+| 6 | **MEDIUM** | SS007 - Quotation Preparation | Printout GAPs — use Power BI paginated reports instead of multiple SSRS customizations for easier maintenance | [SS007 - Quotation Preparation](#ss007---quotation-preparation-3-gaps) |
+| 7 | **MEDIUM** | SS008 - Resource Time & Efforts | Pre-win time tracking needs internal project structure — create pre-sales project with proper project type | [SS008 - Resource Time & Efforts](#ss008---resource-time--efforts) |
+| 8 | **LOW** | SS003 - Engineering Job Order | Deadline GAP is trivial — add custom date field + Power Automate alert | [SS003 - Engineering Job Order](#ss003---engineering-job-order-mostly-fit) |
+| 9 | **LOW** | SS005 - Cost & Selling Price | Consider multiple costing versions for what-if scenario comparison | [SS005 - Assembly Cost & Selling Price](#ss005---assembly-cost--selling-price-calculation-all-fit) |
+| 10 | **LOW** | SS007 - Quotation Preparation | Justification field GAP — simple custom text field on quotation line | [SS007 - Quotation Preparation](#ss007---quotation-preparation-3-gaps) |
+
+**Totals:** 1 CRITICAL | 4 HIGH | 2 MEDIUM | 3 LOW
+
+---
+
 ## Executive Summary
 
 The FRD covers the Sales Support team's role in transforming customer requirements (via DFI from CRM) into costed, quoted solutions using D365 F&O. It spans 8 processes: DFI tracking, Engineering Job Orders, BOM building, cost/price calculation, quotation preparation with WBS, and resource time tracking. The solution makes **strong use of standard D365 F&O capabilities** — particularly Engineering Change Management, BOM costing, and Project Quotations with WBS templates.
@@ -27,11 +48,15 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 
 | Aspect | Rating | Comment |
 |--------|--------|---------|
-| DFI tracking in F&O | Needs Design | How will DFI data surface in F&O? |
+| DFI tracking in F&O | **>> NEEDS ARCHITECTURE <<** | How will DFI data surface in F&O? |
+
+**>> ATTENTION AREA: DFI hand-off mechanism is undefined**
+
+> The FRD says Sales Support needs to "track DFI" in F&O, but it does not specify whether the full DFI data needs to replicate to F&O or whether Sales Support just needs a reference/link. This cross-system dependency (CRM → F&O) must be clarified before development.
 
 **Recommendations:**
 
-1. **Clarify the DFI hand-off mechanism.** FRD01 (Sales) defines DFI as a custom CRM entity with versions and approvals. This FRD says Sales Support needs to "track DFI" in F&O. The question is: does the full DFI data need to replicate to F&O, or does Sales Support just need a reference/link?
+1. **>> ENHANCEMENT:** Clarify the DFI hand-off mechanism. FRD01 (Sales) defines DFI as a custom CRM entity with versions and approvals. This FRD says Sales Support needs to "track DFI" in F&O. The question is: does the full DFI data need to replicate to F&O, or does Sales Support just need a reference/link?
    - **If reference only:** Use a URL field on the Project Quotation linking back to the CRM DFI record. No customization needed.
    - **If full data needed:** Use Dual-Write or Virtual Entities to surface CRM DFI data in F&O without duplicating it.
    - **Avoid:** Recreating the DFI entity in F&O — this creates data duplication and sync issues.
@@ -52,11 +77,11 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 | Engineering Change Request | Standard OOB | Correct module choice |
 | Workflow approval by HOD | Standard OOB | Well-designed |
 | Stage tracking | Standard OOB | Built-in lifecycle states |
-| Deadline on change request (GAP) | Minor | Simple custom field |
+| Deadline on change request (GAP) | **>> NEEDS REVIEW <<** | Simple custom field — minor GAP |
 
 **Recommendations:**
 
-1. **The deadline GAP (SS003-05) is trivial.** Add a custom date field "Deadline" to the Engineering Change Request header. Consider adding an alert/notification via Power Automate when the deadline approaches. This is a 1-hour task, not a significant customization.
+1. **>> ENHANCEMENT:** The deadline GAP (SS003-05) is trivial. Add a custom date field "Deadline" to the Engineering Change Request header. Consider adding an alert/notification via Power Automate when the deadline approaches. This is a 1-hour task, not a significant customization.
 
 2. **This is the right approach.** Engineering Change Management was purpose-built for this exact scenario. No alternative needed.
 
@@ -106,14 +131,19 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 | Costing sheet structure | Excellent | Defines full cost/price hierarchy |
 | Profit-setting per cost group | Excellent | Solves the margin-at-top-level problem elegantly |
 | Calculation warnings | Standard OOB | Missing BOM, route, cost alerts |
+| Costing sheet design | **>> NEEDS REVIEW <<** | Foundational — must be finalized before go-live |
+
+**>> ATTENTION AREA: Costing sheet design is foundational and must be finalized upfront**
+
+> The costing sheet is the backbone of all price calculations. A poorly designed costing sheet will cascade errors into every quotation. Changes later are disruptive. This must be treated as a high-priority setup item.
 
 **Recommendations:**
 
 1. **This is one of the strongest parts of the solution.** The use of cost groups with profit-settings to apply margins at every BOM level (not just top-level) is the correct D365 approach and is more accurate than manual top-level margin adjustments.
 
-2. **Consider creating multiple costing versions** beyond just "Sales Support" — e.g., "What-If" scenarios for different margin strategies. D365 supports this natively and it allows Sales Support to compare scenarios without affecting the active costing.
+2. **>> ENHANCEMENT:** Consider creating multiple costing versions beyond just "Sales Support" — e.g., "What-If" scenarios for different margin strategies. D365 supports this natively and it allows Sales Support to compare scenarios without affecting the active costing.
 
-3. **Ensure the costing sheet is designed carefully upfront.** It's the backbone of all price calculations. Changes later are disruptive. Recommend a dedicated workshop to finalize the costing sheet structure before go-live.
+3. **>> ENHANCEMENT:** Ensure the costing sheet is designed carefully upfront. It's the backbone of all price calculations. Changes later are disruptive. Recommend a dedicated workshop to finalize the costing sheet structure before go-live.
 
 ---
 
@@ -145,10 +175,14 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 | Project Quotation from Opportunity | Good | Standard CRM→F&O flow |
 | WBS template import | Excellent | Saves significant time, reusable |
 | Cost detail in WBS activities | Standard OOB | Items, hours, expenses per activity |
-| CAD integration | Needs Architecture | Not detailed enough |
+| CAD integration | **>> NEEDS ARCHITECTURE <<** | Not detailed enough — critical integration undefined |
 | Generate quotation lines from WBS | Standard OOB | Built-in function |
 | Approval workflow | Standard OOB | Standard workflow framework |
 | Won/Lost status sync | Good | CRM↔F&O coordination |
+
+**>> ATTENTION AREA: CAD↔D365 integration is mentioned but not architected**
+
+> The FRD says "WBS will be sent to CAD with the related activity number then the CAD will fill the related item and send it back to D365." This is a critical integration for the quotation process and has no architecture specified. The CAD system, data format, and integration mechanism are all undefined.
 
 **GAP Analysis:**
 
@@ -160,7 +194,7 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 
 **Recommendations:**
 
-1. **CAD↔D365 integration is mentioned but not architected.** The FRD says "WBS will be sent to CAD with the related activity number then the CAD will fill the related item and send it back to D365." This needs a proper integration design:
+1. **>> ENHANCEMENT (CRITICAL):** CAD↔D365 integration needs a proper integration design:
    - What is the CAD system? (AutoCAD, SolidWorks, etc.)
    - What format? (API, file-based, middleware?)
    - Recommendation: Use **Azure Logic Apps** or **Power Automate** with a shared staging area (e.g., SharePoint, Dataverse table) for the handoff. Define the data contract explicitly.
@@ -169,7 +203,7 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 
 3. **The Opportunity Won → Quotation Confirmed → Project Created pipeline is well-designed.** This is the standard D365 Project Operations flow and is efficient.
 
-4. **For the printout GAPs:** Instead of multiple SSRS customizations, consider a single **Power BI paginated report** that handles all printout variations (with/without installation, labor breakdown). This is more future-proof and easier for Technica to maintain.
+4. **>> ENHANCEMENT:** For the printout GAPs: Instead of multiple SSRS customizations, consider a single **Power BI paginated report** that handles all printout variations (with/without installation, labor breakdown). This is more future-proof and easier for Technica to maintain.
 
 ---
 
@@ -184,13 +218,17 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 | Aspect | Rating | Comment |
 |--------|--------|---------|
 | Timesheet tracking | Standard OOB | No issues |
-| Pre-win time tracking | Needs Planning | Requires internal project structure |
+| Pre-win time tracking | **>> NEEDS REVIEW <<** | Requires internal project structure |
+
+**>> ATTENTION AREA: Pre-win time tracking requires internal project structure**
+
+> Time tracking starts before a customer project exists (during the sales phase). Without a dedicated internal project structure, there is no valid project to charge time against, and pre-sales costs could accidentally flow to customer billing.
 
 **Recommendations:**
 
-1. **Create a "Pre-Sales" or "Business Development" internal project** with dedicated WBS activities for sales support effort. This allows time tracking before a customer project exists. When the opportunity is won, the actual project is created separately.
+1. **>> ENHANCEMENT:** Create a "Pre-Sales" or "Business Development" internal project with dedicated WBS activities for sales support effort. This allows time tracking before a customer project exists. When the opportunity is won, the actual project is created separately.
 
-2. **Set the project type correctly:**
+2. **>> ENHANCEMENT:** Set the project type correctly:
    - Pre-sales project: **Internal** or **Cost** project type (no revenue recognition)
    - Customer project: **Time & Material** or **Fixed-price** project type
    - This ensures pre-sales costs don't accidentally flow to customer billing
@@ -209,8 +247,14 @@ Overall assessment: **Well-designed with good use of standard functionality.** A
 
 **Assessment: All standard setup — no issues**
 
-Recommendations:
-1. **Costing sheet and cost groups must be finalized before any cost calculations can run.** These are foundational. Schedule a dedicated setup workshop.
+**>> ATTENTION AREA: Foundational setup items must be completed before dependent processes**
+
+> Costing sheet and cost groups are the foundation for all cost/price calculations (SS005) and quotation preparation (SS007). If these are not finalized before those processes are configured, rework will be required.
+
+**Recommendations:**
+
+1. **>> ENHANCEMENT:** Costing sheet and cost groups must be finalized before any cost calculations can run. These are foundational. Schedule a dedicated setup workshop.
+
 2. **Product owner groups** tied to Engineering Change Management approval is a smart access control mechanism. Ensure the groups are defined to match Technica's organizational structure.
 
 ---
@@ -231,11 +275,17 @@ Recommendations:
 
 ## Risk Flags
 
-1. **CAD integration is undefined.** This is a critical integration for the quotation process and has no architecture specified.
+1. **>> ATTENTION AREA: CAD integration is undefined**
 
-2. **Cross-FRD dependency:** DFI flows from CRM (FRD01) to F&O (FRD02). The integration mechanism must be consistent across both FRDs.
+> This is a critical integration for the quotation process and has no architecture specified. Development cannot proceed without a defined integration pattern, data contract, and middleware selection.
 
-3. **Costing sheet design is critical.** A poorly designed costing sheet will cascade errors into every quotation. This must be treated as a high-priority setup item.
+2. **>> ATTENTION AREA: Cross-FRD dependency on DFI**
+
+> DFI flows from CRM (FRD01) to F&O (FRD02). The integration mechanism must be consistent across both FRDs. If FRD01 and FRD02 teams choose different approaches, maintenance and data integrity will suffer.
+
+3. **>> ATTENTION AREA: Costing sheet design is critical**
+
+> A poorly designed costing sheet will cascade errors into every quotation. This must be treated as a high-priority setup item with a dedicated workshop before go-live.
 
 ---
 

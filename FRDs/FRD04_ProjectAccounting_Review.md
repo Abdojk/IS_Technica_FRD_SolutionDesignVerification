@@ -7,6 +7,34 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | PJ002 - Project Execution | Cost reallocation to assemblies is not OOB — requires adjustment journals or custom batch process; test thoroughly | [PJ002 - Project Execution](#pj002---project-execution) |
+| 2 | **CRITICAL** | Risk Flags | Cross-FRD integration dependencies are heavy — must be designed as cohesive architecture, not individually | [Risk Flags](#risk-flags) |
+| 3 | **HIGH** | PJ001 - Project Planning | CRM/F&O opportunity stage duplication — let CRM own pipeline stages, F&O receives at quotation stage only | [PJ001 - Project Planning](#pj001---project-planning) |
+| 4 | **HIGH** | PJ003 - Milestone Invoice | Milestone values don't auto-update from contract — risk for revenue recognition accuracy | [PJ003 - Milestone Invoice Proposal](#pj003---milestone-invoice-proposal) |
+| 5 | **HIGH** | PJ004 - Revenue Estimation | Manual POC% input is a revenue manipulation risk — default to automatic with manual override approval | [PJ004 - Project Estimates / Accrued Revenue](#pj004---project-estimates--accrued-revenue) |
+| 6 | **MEDIUM** | PJ001 - Project Planning | Resource notification via Custom Alerts is limited — use Power Automate for richer notifications | [PJ001 - Project Planning](#pj001---project-planning) |
+| 7 | **MEDIUM** | PJ001 - Project Planning | Case management not designed for project governance — consider Power Apps, SharePoint, or Azure DevOps | [PJ001 - Project Planning](#pj001---project-planning) |
+| 8 | **MEDIUM** | PJ002 - Project Execution | Forecast model lifecycle is complex — needs clear SOPs and scalable naming convention | [PJ002 - Project Execution](#pj002---project-execution) |
+| 9 | **MEDIUM** | PJ002 - Project Execution | Report GAPs (3 custom reports + 2 modifications) — use Power BI instead of SSRS | [PJ002 - Project Execution](#pj002---project-execution) |
+| 10 | **MEDIUM** | PJ004 - Revenue Estimation | Revenue recognition compliance — verify POC% method meets IFRS 15 / ASC 606 with auditors | [PJ004 - Project Estimates / Accrued Revenue](#pj004---project-estimates--accrued-revenue) |
+| 11 | **MEDIUM** | Setup | Single "Fixed Price" project group may be insufficient — add "Internal/R&D" group for non-billable projects | [Setup Review](#setup-review) |
+| 12 | **MEDIUM** | Setup | Missing "Closing" project stage between In Process and Finished | [Setup Review](#setup-review) |
+| 13 | **LOW** | PJ001 - Project Planning | "Confirmed received day" GAP needs source clarification — auto-populate from PO delivery date | [PJ001 - Project Planning](#pj001---project-planning) |
+| 14 | **LOW** | PJ002 - Project Execution | Timesheet from CRM integration mechanism undefined — define Dual-Write, Power Automate, or custom | [PJ002 - Project Execution](#pj002---project-execution) |
+| 15 | **LOW** | PJ003 - Milestone Invoice | On-account invoice schedule modification — create a new custom report rather than modifying standard | [PJ003 - Milestone Invoice Proposal](#pj003---milestone-invoice-proposal) |
+| 16 | **LOW** | PJ003 - Milestone Invoice | Cash Flow Aging Report GAP — replicate Technica format as Power BI paginated report | [PJ003 - Milestone Invoice Proposal](#pj003---milestone-invoice-proposal) |
+| 17 | **LOW** | PJ004 - Revenue Estimation | Estimate form modification for commercial vs. real invoice — use embedded Power BI rather than form customization | [PJ004 - Project Estimates / Accrued Revenue](#pj004---project-estimates--accrued-revenue) |
+
+**Totals:** 2 CRITICAL | 3 HIGH | 6 MEDIUM | 5 LOW
+
+---
+
 ## Executive Summary
 
 This is the **most comprehensive FRD** in the set, covering the full project lifecycle from opportunity to revenue recognition. It spans four major processes: Project Planning (PJ001), Project Execution (PJ002), Milestone Invoicing (PJ003), and Revenue Estimation (PJ004). The solution makes **excellent use of D365 Project Accounting standard capabilities** — WBS templates, budget control, milestone billing, resource allocation, forecast models, and percentage-of-completion revenue recognition.
@@ -42,14 +70,20 @@ Overall assessment: **Strong, well-detailed solution with mostly FIT requirement
 | Sub-projects | Well-designed | Pre-win tracking, cost segregation |
 | MS Project integration | Standard OOB | Check-in/check-out model |
 | Project stages | Standard OOB | With action restrictions per stage |
+| Opportunity stages in F&O | **>> NEEDS REVIEW <<** | Duplicates CRM pipeline — see below |
+| Resource notification via alerts | **>> NEEDS REVIEW <<** | Custom alerts are limited — see below |
+
+**>> ATTENTION AREA: CRM/F&O opportunity stage duplication**
+
+> The setup of stages (Qualify, Feasibility, Capex, Comparison, Negotiation) as activities in F&O is workable but somewhat manual. Since Technica is already managing opportunities in CRM (FRD01), maintaining parallel opportunity staging in F&O creates duplicate tracking and unnecessary overhead.
 
 **Recommendations:**
 
-1. **Opportunity stages in F&O (Sales Process template):** The setup of stages (Qualify, Feasibility, Capex, Comparison, Negotiation) as activities is workable but somewhat manual. Since Technica is already managing opportunities in CRM (FRD01), consider whether this F&O opportunity staging is truly needed or if it creates duplicate tracking. **Recommendation:** Let CRM own the opportunity pipeline stages. F&O should only receive the opportunity once it reaches the quotation stage, reducing duplication.
+1. **>> ENHANCEMENT:** Let CRM own the opportunity pipeline stages. F&O should only receive the opportunity once it reaches the quotation stage, reducing duplication.
 
-2. **Resource notification via Custom Alerts** is a good approach but has limitations — custom alerts are basic. For richer notifications (with project details, links, action buttons), consider **Power Automate flows triggered on resource assignment**. This provides better notification content and supports Teams/mobile notifications.
+2. **>> ENHANCEMENT:** Resource notification via Custom Alerts is a good approach but has limitations — custom alerts are basic. For richer notifications (with project details, links, action buttons), consider **Power Automate flows triggered on resource assignment**. This provides better notification content and supports Teams/mobile notifications.
 
-3. **"Confirmed received day" GAP (PJ001-020):** This is a simple custom field on the item requirement form. Low complexity, but ensure it's clear whether this date comes from:
+3. **>> ENHANCEMENT:** **"Confirmed received day" GAP (PJ001-020):** This is a simple custom field on the item requirement form. Low complexity, but ensure it's clear whether this date comes from:
    - PO confirmed delivery date (auto-populated)
    - Voyage estimated arrival (from Transportation Management)
    - Manual entry
@@ -61,7 +95,7 @@ Overall assessment: **Strong, well-detailed solution with mostly FIT requirement
    - Clear naming convention distinguishes pre-win sub-projects (e.g., prefix "PRE-")
    - Budget controls prevent excessive pre-win time booking
 
-5. **Case management for project governance** (change log, issue log, risk register, lessons learned) is a creative use of D365 Case Management. However, consider whether a **dedicated project governance tool** (e.g., Power Apps board, SharePoint lists, or Azure DevOps) might provide a better user experience for these specific needs. Cases work, but they're designed for customer service, not project governance.
+5. **>> ENHANCEMENT:** **Case management for project governance** (change log, issue log, risk register, lessons learned) is a creative use of D365 Case Management. However, consider whether a **dedicated project governance tool** (e.g., Power Apps board, SharePoint lists, or Azure DevOps) might provide a better user experience for these specific needs. Cases work, but they're designed for customer service, not project governance.
 
 6. **Financial dimensions on projects:** Mentioned as FIT (PJ001-018). Ensure the dimension structure is defined early — typical setup: Project + Cost Center + Department. This affects all downstream reporting.
 
@@ -88,33 +122,34 @@ Overall assessment: **Strong, well-detailed solution with mostly FIT requirement
 | PO against projects | Standard OOB | Auto-consumption on receipt |
 | Cost tracking view | Standard OOB | With variance analysis |
 | Effort tracking view | Standard OOB | With remaining effort calc |
+| Cost reallocation to assemblies | **>> NEEDS ARCHITECTURE <<** | Most significant GAP — see below |
+| WBS additional tracking columns | **>> NEEDS REVIEW <<** | GAP items — see below |
+| Custom reports (3 reports) | **>> NEEDS REVIEW <<** | Reporting effort — see below |
+| Timesheet from CRM to F&O | **>> NEEDS REVIEW <<** | Integration mechanism undefined |
 
-**GAP: Cost Reallocation to Assemblies**
+**>> ATTENTION AREA: Cost reallocation to assemblies is the most significant custom requirement**
 
-This is the most significant custom requirement in the document:
-- Common activity costs (paint, cleaning, etc.) tracked at project level
-- At project close, reallocated to assemblies proportionally based on assembly cost %
-- Example: 24,000 distributed as 42%/33%/25% across 3 assemblies
+> Common activity costs (paint, cleaning, etc.) tracked at project level must be reallocated to assemblies proportionally based on assembly cost percentage at project close (e.g., 24,000 distributed as 42%/33%/25% across 3 assemblies). This is not OOB in D365 Project Accounting and requires careful design.
 
 **Recommendations:**
 
-1. **Cost reallocation is not OOB in D365 Project Accounting.** Options:
+1. **>> ENHANCEMENT (CRITICAL):** Cost reallocation is not OOB in D365 Project Accounting. Options:
    - **Option A (Recommended): Project adjustment transactions.** Use project adjustment journals to move costs from the common activity to assembly activities based on calculated percentages. This keeps everything within standard project accounting and maintains full audit trail.
    - **Option B: Indirect cost allocation rules** in Cost Accounting module. More sophisticated but adds complexity.
    - **Option C: Custom X++ batch job** that calculates percentages and creates adjustment journals automatically. Best if this happens frequently.
 
    **Recommendation:** Start with Option A (manual adjustment journals) and automate with Option C if volume warrants it.
 
-2. **Forecast model lifecycle is well thought out** but complex. Create clear documentation/SOPs for the project team on when to create which forecast model. The T_Forecast → NT_Forecast naming suggests only 2 iterations — ensure the naming convention supports multiple revisions (e.g., Forecast_Rev01, Forecast_Rev02).
+2. **>> ENHANCEMENT:** Forecast model lifecycle is well thought out but complex. Create clear documentation/SOPs for the project team on when to create which forecast model. The T_Forecast → NT_Forecast naming suggests only 2 iterations — ensure the naming convention supports multiple revisions (e.g., Forecast_Rev01, Forecast_Rev02).
 
-3. **WBS Tracking Views — additional columns (Original Budget, Current Budget):** These are GAP items (PJ002-009/010 tracking views are FIT, but additional columns are GAP). Recommendation: Use **Power BI embedded in workspace** for richer budget vs. actual views rather than customizing the WBS form. This is easier to maintain and provides drill-through capabilities.
+3. **>> ENHANCEMENT:** WBS Tracking Views — additional columns (Original Budget, Current Budget): These are GAP items (PJ002-009/010 tracking views are FIT, but additional columns are GAP). Recommendation: Use **Power BI embedded in workspace** for richer budget vs. actual views rather than customizing the WBS form. This is easier to maintain and provides drill-through capabilities.
 
-4. **Report GAPs (PJ002-011/012/013):**
+4. **>> ENHANCEMENT:** Report GAPs (PJ002-011/012/013):
    - **Project Planning Report:** Build in Power BI using project WBS data
    - **Project List - Ongoing:** Build in Power BI with filters for project stage
    - **Master Planning Report:** This is the most complex — it needs to consolidate milestones across all projects with notifications. **Recommend Power BI with data-driven alerts** rather than a custom SSRS report. Power BI can send email alerts when milestones approach due dates.
 
-5. **Timesheet from CRM pushed to F&O project:** This is mentioned briefly but is a significant integration point. Define the mechanism (Dual-Write, Power Automate, custom). Ensure timesheet approval workflow still applies to CRM-originated timesheets.
+5. **>> ENHANCEMENT:** Timesheet from CRM pushed to F&O project is mentioned briefly but is a significant integration point. Define the mechanism (Dual-Write, Power Automate, custom). Ensure timesheet approval workflow still applies to CRM-originated timesheets.
 
 ---
 
@@ -137,20 +172,26 @@ This is the most significant custom requirement in the document:
 | Invoice proposal creation | Standard OOB | Standard workflow |
 | Cash flow reports | Mostly OOB | Good use of built-in reports |
 | Retention handling | Standard OOB | Configurable % per milestone |
+| Milestone value vs. contract sync | **>> RISKY <<** | Values do not auto-update — see below |
+| On-account invoice schedule | **>> NEEDS REVIEW <<** | Modification needed — see below |
+
+**>> ATTENTION AREA: Milestone values do not auto-update from contract**
+
+> The FRD notes that "contract values do not update automatically" and the project team must update manually. This is a risk for revenue recognition accuracy — if milestone totals diverge from contract value, accrued revenue calculations will be incorrect.
 
 **Recommendations:**
 
-1. **On-account invoice schedule modification (PJ003-005):** Adding commercial invoice number and payment status is a reasonable customization. However, instead of modifying the standard report, **create a new custom report** that combines real invoice data with commercial invoice references. This preserves the standard report for future upgrades.
+1. **>> ENHANCEMENT:** On-account invoice schedule modification (PJ003-005): Adding commercial invoice number and payment status is a reasonable customization. However, instead of modifying the standard report, **create a new custom report** that combines real invoice data with commercial invoice references. This preserves the standard report for future upgrades.
 
-2. **Cash Flow Aging Report (PJ003-009 - GAP):** The Technica Excel format should be replicated as a **Power BI paginated report**. This provides:
+2. **>> ENHANCEMENT:** Cash Flow Aging Report (PJ003-009 - GAP): The Technica Excel format should be replicated as a **Power BI paginated report**. This provides:
    - Automated data refresh
    - Export to Excel/PDF
    - Consistent formatting matching Technica's existing format
    - Drill-through to project details
 
-3. **The commercial invoice concept** (mentioned as handled in Logistics FRD) creates a cross-FRD dependency. Ensure the real invoice ↔ commercial invoice ↔ packing slip linkage is clearly designed end-to-end.
+3. **The commercial invoice concept** (mentioned as handled in Logistics FRD) creates a cross-FRD dependency. Ensure the real invoice <-> commercial invoice <-> packing slip linkage is clearly designed end-to-end.
 
-4. **Milestone value updates:** The FRD notes that "contract values do not update automatically" and project team must update manually. This is a risk for revenue recognition accuracy. **Recommendation:** Add a validation check (Power Automate or periodic batch job) that compares milestone totals to contract value and alerts the project team if they diverge.
+4. **>> ENHANCEMENT (HIGH):** Add a validation check (Power Automate or periodic batch job) that compares milestone totals to contract value and alerts the project team if they diverge. This mitigates the revenue recognition accuracy risk.
 
 ---
 
@@ -172,14 +213,21 @@ This is the most significant custom requirement in the document:
 | Accrued revenue calculation | Standard OOB | Contract x POC% |
 | Monthly estimate journals | Standard OOB | Period-based |
 | Estimate posting | Standard OOB | WIP/accrual entries |
+| Manual POC% override | **>> RISKY <<** | Revenue manipulation risk — see below |
+| Estimate form modification | **>> NEEDS REVIEW <<** | Commercial vs. real invoice columns — see below |
+| IFRS 15 / ASC 606 compliance | **>> NEEDS REVIEW <<** | Verify with auditors — see below |
+
+**>> ATTENTION AREA: Manual POC% input poses audit risk**
+
+> The FRD allows both manual and automatic POC% input. Manual POC% input is a common source of revenue manipulation risk. Without an approval step, project managers could overstate or understate completion percentages, directly affecting reported revenue.
 
 **Recommendations:**
 
-1. **Manual vs. Automatic POC%:** The FRD allows both. **Recommendation:** Default to automatic (actual cost / total forecast cost) and only allow manual override with approval. Manual POC% input is a common source of revenue manipulation risk. If Technica's auditors require manual input, add an approval step.
+1. **>> ENHANCEMENT (HIGH):** Default to automatic POC% (actual cost / total forecast cost) and only allow manual override with approval. If Technica's auditors require manual input, add an approval step.
 
-2. **Estimate form modification (PJ004-003):** Adding commercial vs. real invoice columns is a display-level customization. Consider implementing this as a **Power BI visual embedded in the estimate form** rather than modifying the form directly. This keeps the standard form intact.
+2. **>> ENHANCEMENT:** Estimate form modification (PJ004-003): Adding commercial vs. real invoice columns is a display-level customization. Consider implementing this as a **Power BI visual embedded in the estimate form** rather than modifying the form directly. This keeps the standard form intact.
 
-3. **Revenue recognition compliance:** Ensure the POC% method complies with IFRS 15 / ASC 606 requirements. D365 supports both **completed contract** and **percentage of completion** methods. Verify with Technica's auditors which method is required.
+3. **>> ENHANCEMENT:** Revenue recognition compliance: Ensure the POC% method complies with IFRS 15 / ASC 606 requirements. D365 supports both **completed contract** and **percentage of completion** methods. Verify with Technica's auditors which method is required.
 
 4. **Multiple forecast models:** The lifecycle (Original Budget → Current Estimate → Current Budget) with different forecast model names is correct but complex. Create a **reference guide** for the project team mapping each forecast model to its purpose and when it's created/updated.
 
@@ -189,7 +237,12 @@ This is the most significant custom requirement in the document:
 
 ### Project Groups
 - Single "Fixed Price" project group — appropriate if all projects are fixed price
-- **Recommendation:** Consider adding a second group for "Internal/R&D" projects (from FRD03) with different posting profiles (no revenue accounts)
+
+**>> ATTENTION AREA: Single project group may be insufficient**
+
+> If Technica has internal or R&D projects (referenced in FRD03), a single "Fixed Price" project group will not properly handle non-billable projects, which require different posting profiles (no revenue accounts).
+
+- **>> ENHANCEMENT:** Consider adding a second group for "Internal/R&D" projects (from FRD03) with different posting profiles (no revenue accounts)
 
 ### Project Categories
 - 4 category groups: Labour, Item, Expenses, Fee — standard and appropriate
@@ -198,7 +251,12 @@ This is the most significant custom requirement in the document:
 ### Project Stages
 - Created → On-Hold → In Process → Finished — appropriate lifecycle
 - Stage rules restricting actions — well-configured
-- **Recommendation:** Consider adding a "Closing" stage between In Process and Finished for final checks, cost reallocation, and lessons learned before formal closure
+
+**>> ATTENTION AREA: Missing "Closing" stage**
+
+> The current lifecycle moves directly from In Process to Finished with no intermediate stage for final checks, cost reallocation, and lessons learned. This risks premature project closure before all costs are properly allocated and governance activities completed.
+
+- **>> ENHANCEMENT:** Consider adding a "Closing" stage between In Process and Finished for final checks, cost reallocation, and lessons learned before formal closure
 
 ---
 
@@ -219,7 +277,15 @@ This is the most significant custom requirement in the document:
 
 ## Risk Flags
 
+**>> ATTENTION AREA: Cost reallocation to assemblies is the most complex customization**
+
+> It requires either manual adjustment journals or a custom batch process. Test thoroughly with real project data. This is the highest-risk technical deliverable in this FRD.
+
 1. **Cost reallocation to assemblies** is the most complex customization. It requires either manual adjustment journals or a custom batch process. Test thoroughly with real project data.
+
+**>> ATTENTION AREA: Cross-FRD integration dependencies are heavy and must be designed holistically**
+
+> These integrations must be designed as a cohesive architecture, not individually. Without a unified integration pattern, each developer may implement differently, leading to maintenance issues.
 
 2. **Cross-FRD dependencies are heavy:**
    - CRM Opportunity (FRD01) → F&O Opportunity (FRD04)

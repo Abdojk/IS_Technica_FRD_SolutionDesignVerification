@@ -7,6 +7,24 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **HIGH** | LOG003 - Outbound Shipments | Commercial invoice number must link to project accounting (FRD04) — cross-FRD data flow is not fully specified | [LOG003 - Outbound Shipments](#log003---outbound-shipments-all-fit) |
+| 2 | **MEDIUM** | LOG001 - Inbound Shipments | Consider enabling auto-costing rules to reduce manual charge entry on voyages | [LOG001 - Inbound Shipments](#log001---inbound-shipments-1-gap) |
+| 3 | **MEDIUM** | LOG002 - Direct Delivery | Prefer Option 1 (direct delivery link) over Option 2 (site warehouse) to avoid warehouse proliferation | [LOG002 - Direct Delivery](#log002---direct-delivery-all-fit) |
+| 4 | **MEDIUM** | LOG002 - Direct Delivery | Manual BOM line removal for direct delivery is error-prone — use BOM version or phantom line type instead | [LOG002 - Direct Delivery](#log002---direct-delivery-all-fit) |
+| 5 | **MEDIUM** | LOG004 - Packing | Verify WMS packing station handles box assignment before building custom solution | [LOG004 - Packing](#log004---packing-1-gap) |
+| 6 | **LOW** | LOG001 - Inbound Shipments | Power Automate needed for document received email notification — very low complexity | [LOG001 - Inbound Shipments](#log001---inbound-shipments-1-gap) |
+| 7 | **LOW** | LOG000 - Setup | Use Power BI for average lead time calculation instead of modifying the system | [LOG000 - Setup](#log000---setup-1-gap) |
+
+**Totals:** 0 CRITICAL | 1 HIGH | 4 MEDIUM | 2 LOW
+
+---
+
 ## Executive Summary
 
 This FRD covers three logistics processes: Inbound Shipments (via Landed Cost module), Direct Delivery, and Outbound Shipments (via Transportation Management). The solution makes **excellent use of D365 Landed Cost** for voyage tracking, in-transit warehousing, and charge allocation. Most requirements are FIT with only 3 minor GAPs.
@@ -52,9 +70,13 @@ Overall assessment: **Well-designed, clean, and efficient logistics solution wit
 
 1. **This is one of the best-designed processes across all FRDs.** The Landed Cost module is used exactly as intended. No changes recommended.
 
-2. **Charge code reporting (mentioned as a need):** D365 Landed Cost supports charge code breakdown reporting OOB. Verify the standard "Voyage costing" reports meet Technica's needs before building custom reports.
+2. **>> ENHANCEMENT:** Charge code reporting (mentioned as a need): D365 Landed Cost supports charge code breakdown reporting OOB. Verify the standard "Voyage costing" reports meet Technica's needs before building custom reports.
 
-3. **Consider enabling auto-costing rules** in Landed Cost setup. This can auto-apply standard charge percentages (e.g., freight = 5% of goods value) when creating voyages, reducing manual entry.
+3. **>> ENHANCEMENT:** Consider enabling auto-costing rules in Landed Cost setup. This can auto-apply standard charge percentages (e.g., freight = 5% of goods value) when creating voyages, reducing manual entry.
+
+**>> ATTENTION AREA: Auto-costing rules not mentioned in setup**
+
+> The FRD does not reference auto-costing rules in Landed Cost configuration. Enabling these rules would reduce manual charge entry on each voyage by auto-applying standard percentages (e.g., freight, insurance). This is a quick configuration win that should be verified during implementation.
 
 ---
 
@@ -77,14 +99,20 @@ Overall assessment: **Well-designed, clean, and efficient logistics solution wit
 
 **Recommendations:**
 
-1. **Option 1 is recommended** as the primary approach because:
+1. **>> ENHANCEMENT:** Option 1 is recommended as the primary approach because:
    - It maintains the sales order ↔ PO direct delivery link (standard D365 feature)
    - It auto-updates the sales order when the PO is received
    - It integrates cleanly with project accounting (item consumption)
 
-2. **Option 2 (customer site as warehouse)** should be reserved for special cases where goods need to remain in Technica's inventory at the customer site (e.g., consignment stock). Creating a warehouse per customer site can lead to warehouse proliferation if there are many customers.
+**>> ATTENTION AREA: Warehouse proliferation risk with Option 2**
 
-3. **BOM line removal for direct delivery items:** The FRD states the factory must "remove the item/part from the BOM" when direct delivering. This is a manual step that could be error-prone. Consider using **BOM line type = "Phantom"** or a separate BOM version for items that will be directly delivered, rather than manually removing lines.
+> Option 2 (customer site as warehouse) should be reserved for special cases where goods need to remain in Technica's inventory at the customer site (e.g., consignment stock). Creating a warehouse per customer site can lead to warehouse proliferation if there are many customers.
+
+2. **>> ENHANCEMENT:** BOM line removal for direct delivery items: The FRD states the factory must "remove the item/part from the BOM" when direct delivering. This is a manual step that could be error-prone. Consider using **BOM line type = "Phantom"** or a separate BOM version for items that will be directly delivered, rather than manually removing lines.
+
+**>> ATTENTION AREA: Manual BOM removal is error-prone**
+
+> Manually removing BOM lines for direct-delivered items introduces risk of incorrect BOM configurations and lost traceability. A BOM version or phantom line type approach preserves data integrity and provides an audit trail.
 
 ---
 
@@ -106,14 +134,18 @@ Overall assessment: **Well-designed, clean, and efficient logistics solution wit
 | Route planning | Standard OOB | Zip/country/port based |
 | Transportation tenders | Standard OOB | Rate comparison |
 | Carrier selection | Standard OOB | Best rate selection |
-| Commercial invoice (proforma) | Standard OOB | Print-only, no GL impact |
+| Commercial invoice (proforma) | **>> NEEDS REVIEW <<** | Cross-FRD linkage to project accounting must be verified |
 | Packing slip / delivery note | Standard OOB | Standard posting |
 
 **Recommendations:**
 
 1. **Transportation tenders for rate comparison** is a sophisticated feature that many implementations skip. Good that Technica is using it — it provides audit trail for carrier selection decisions.
 
-2. **Commercial invoice:** Confirm this links back to the project invoice in FRD04 (PJ003). The Project Accounting FRD mentions commercial invoices in the context of milestone reporting — ensure the same commercial invoice number is accessible from both the logistics and project accounting sides.
+2. **>> ENHANCEMENT:** Commercial invoice: Confirm this links back to the project invoice in FRD04 (PJ003). The Project Accounting FRD mentions commercial invoices in the context of milestone reporting — ensure the same commercial invoice number is accessible from both the logistics and project accounting sides.
+
+**>> ATTENTION AREA: Cross-FRD commercial invoice linkage undefined**
+
+> Both FRD06 (Logistics) and FRD04 (Project Accounting) reference the commercial invoice but neither fully specifies the end-to-end data flow. This linkage must be designed explicitly to ensure the same commercial invoice number is accessible from both logistics and project accounting.
 
 ---
 
@@ -126,7 +158,11 @@ Overall assessment: **Well-designed, clean, and efficient logistics solution wit
 
 | GAP ID | Description | Recommendation |
 |--------|-------------|----------------|
-| LOG004-01 | Assign/reassign box numbers to parts | This can be addressed using D365 **Container packing** feature in Warehouse Management. The standard packing station functionality allows assigning items to containers with packing slip generation. Before building custom, verify if WMS packing station meets this need. If the BOM explode approach is preferred, a simple custom field on the packing line is sufficient. |
+| LOG004-01 | Assign/reassign box numbers to parts | **>> NEEDS REVIEW <<** — This can be addressed using D365 **Container packing** feature in Warehouse Management. The standard packing station functionality allows assigning items to containers with packing slip generation. Before building custom, verify if WMS packing station meets this need. If the BOM explode approach is preferred, a simple custom field on the packing line is sufficient. |
+
+**>> ATTENTION AREA: Custom packing solution may duplicate OOB capability**
+
+> The WMS packing station in D365 already supports assigning items to containers with packing slip generation. Before building a custom box assignment solution, the standard packing station functionality should be evaluated to avoid unnecessary customization.
 
 ---
 
@@ -144,9 +180,13 @@ Overall assessment: **Well-designed, clean, and efficient logistics solution wit
 
 **Recommendations:**
 
-1. **Journey templates and legs should be set up early** — they affect all delivery date calculations for inbound shipments.
+1. **>> ENHANCEMENT:** Journey templates and legs should be set up early — they affect all delivery date calculations for inbound shipments.
 
-2. **The Tracking Control Center is the key configuration** for accurate delivery estimates. Ensure lead times are realistic and updated periodically based on actual voyage data.
+2. **>> ENHANCEMENT:** The Tracking Control Center is the key configuration for accurate delivery estimates. Ensure lead times are realistic and updated periodically based on actual voyage data.
+
+**>> ATTENTION AREA: Lead time accuracy depends on periodic review**
+
+> Static lead times in journey templates will become inaccurate over time. A Power BI dashboard on historical voyage data can surface average actual lead times, enabling periodic recalibration of journey templates without system modification.
 
 ---
 

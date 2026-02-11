@@ -7,6 +7,28 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | Quality Management | Quality Management exclusion is risky for a manufacturing company tracking non-conformances | [Risk Flags](#1-quality-management-exclusion----high-risk) |
+| 2 | **HIGH** | IN02-001 - Item Reservation | GAP may not be a true GAP -- replace PR-based reservation with Project Item Requirements | [Section 3 - Component Stock Keeper](#3-component-stock-keeper-in02-001-through-in02-007----1-gap) |
+| 3 | **HIGH** | IN03-009 - Item Splitting | Item splitting approach should use lightweight production orders instead of adjustment journals | [Section 4 - Raw Materials Stock Keeper](#4-raw-materials-stock-keeper-in03-001-through-in03-009----2-gaps) |
+| 4 | **HIGH** | IN04-002 - Item Creation | Item creation workflow should use Product Lifecycle State instead of custom workflow | [Section 5 - Head of Stock Operations](#5-head-of-stock-operations-in04-001-through-in04-007----1-gap) |
+| 5 | **HIGH** | Cross-FRD Warehouse Structure | Warehouse structure not aligned across FRD05/FRD06/FRD09 | [Risk Flags](#4-cross-frd-warehouse-structure-alignment----medium-risk) |
+| 6 | **MEDIUM** | IN03-001 - Material Delivery Form | Likely not a true GAP -- use Production Picking List Journal instead | [Section 4 - Raw Materials Stock Keeper](#4-raw-materials-stock-keeper-in03-001-through-in03-009----2-gaps) |
+| 7 | **MEDIUM** | TO0002 - Transfer Order Workflow | Use Power Automate approval instead of custom X++ workflow | [Section 7 - Transfer Orders](#7-transfer-order-between-warehouses-to0001-through-to0004----1-gap) |
+| 8 | **MEDIUM** | Storage Dimension Groups | Need clarification -- two groups needed (with/without Location tracking) | [Section 1 - Product Setup](#1-product-setup-in01-001-through-in01-005----all-fit) |
+| 9 | **MEDIUM** | Warehouse WMS Scope | Clarify which warehouses are WMS-enabled vs basic | [Section 2 - Sites/Warehouses/Locations](#2-siteswarehouseslocations-setup) |
+| 10 | **LOW** | Stock Count | Use Cycle Counting Plans for biweekly spot checks | [Section 9 - Warehouse Stock Count](#9-warehouse-stock-count-no-explicit-requirement-ids) |
+| 11 | **LOW** | Product Dimensions | Product dimension debate (Color/Style) should be formally closed | [Section 1 - Product Setup](#1-product-setup-in01-001-through-in01-005----all-fit) |
+
+**Totals:** 1 CRITICAL | 4 HIGH | 4 MEDIUM | 2 LOW
+
+---
+
 ## Executive Summary
 
 This FRD covers inventory management across product setup, warehouse structure, component stock keeping, raw materials stock keeping, head of stock operations, WMS mobile device operations, transfer orders, item movements, stock counting, and inventory adjustments. The document addresses a **make-to-order manufacturing environment** where inventory is heavily project-driven -- items are procured, reserved, picked, consumed, and returned against specific projects.
@@ -46,12 +68,22 @@ Overall assessment: **Functional design with standard D365 inventory foundations
 | WAM costing for stock items | Standard OOB | Common for manufacturing |
 | Standard Cost for finished products | Standard OOB | Correct for make-to-order with BOM costing |
 | Inventory Status dimension | Standard OOB | Enables quality/hold status tracking without QM module |
+| Storage Dimension Group clarity | **>> NEEDS REVIEW <<** | Two groups needed -- see recommendation |
+| Product dimension scope (Color/Style) | **>> NEEDS REVIEW <<** | Unresolved reviewer comment -- see recommendation |
+
+**>> ATTENTION AREA: Storage Dimension Groups need clarification**
+
+> The FRD states "some items will be tracked by Site, warehouse and location, and some others would not require Location tracking." This means two Storage Dimension Groups are needed, but the FRD does not explicitly define both. Storage dimension groups cannot be changed after transactions are posted, so getting this right during setup is critical.
+
+**>> ATTENTION AREA: Product dimension debate (Color/Style) unresolved**
+
+> The unresolved reviewer comment (EA1: "Not Clear! Color? Style? Are these considered as Dimension Groups?") has not been formally closed. If only Configuration and Size are used, this must be documented explicitly to prevent confusion during item setup.
 
 **Recommendations:**
 
-1. **Clarify which items need Location tracking and which do not.** The FRD states "some items will be tracked by Site, warehouse and location, and some others would not require Location tracking." This means **two Storage Dimension Groups** are needed -- one with Location active, one without. Ensure the naming convention makes this clear (e.g., "SDG-SiteWHLoc" vs. "SDG-SiteWH"). Storage dimension groups **cannot be changed after transactions are posted**, so getting this right during setup is critical.
+1. **>> ENHANCEMENT:** Define **two Storage Dimension Groups** explicitly -- one with Location active, one without. Use clear naming convention (e.g., "SDG-SiteWHLoc" vs. "SDG-SiteWH"). Storage dimension groups **cannot be changed after transactions are posted**, so getting this right during setup is critical.
 
-2. **The unresolved comment about Color and Style dimensions** (EA1: "Not Clear! Color? Style? Are these considered as Dimension Groups?") should be formally closed. If only Configuration and Size are used, document that Color and Style are explicitly excluded to prevent confusion during item setup.
+2. **>> ENHANCEMENT:** Formally close the product dimension debate. If only Configuration and Size are used, document that Color and Style are explicitly excluded to prevent confusion during item setup.
 
 3. **Inventory Status dimension is a strong choice** -- it can serve as a lightweight quality gate (Available, QC Hold, Blocked, Non-Conformance) without implementing the full Quality Management module. This partially compensates for the QM exclusion. Ensure status values are defined early and mapped to business processes.
 
@@ -79,10 +111,15 @@ Overall assessment: **Functional design with standard D365 inventory foundations
 | RECV and BULK locations | Standard OOB | Standard WMS receiving pattern |
 | Separate Components vs. Raw Material warehouses | Good Design | Clear material segregation |
 | Samples and Non-Moving locations | Good Design | Proper disposition tracking |
+| WMS scope clarity | **>> NEEDS REVIEW <<** | Which warehouses are WMS-enabled vs basic? |
+
+**>> ATTENTION AREA: WMS-enabled vs basic warehouse scope unclear**
+
+> The FRD mentions WMS for receiving/put-away but does not specify which warehouses use advanced WMS vs. basic inventory. This distinction drives significant configuration differences and must be clarified before setup.
 
 **Recommendations:**
 
-1. **Clarify which warehouses are WMS-enabled.** The FRD mentions WMS for receiving/put-away but does not specify which warehouses use advanced WMS vs. basic inventory. Recommendation: Enable **WMS only for the Components/Spare Parts warehouse** (high item count, many locations, mobile device usage) and keep **Raw Material warehouse on basic inventory management** (fewer SKUs, simpler flow). This reduces WMS configuration overhead.
+1. **>> ENHANCEMENT:** Clarify which warehouses are WMS-enabled. Recommendation: Enable **WMS only for the Components/Spare Parts warehouse** (high item count, many locations, mobile device usage) and keep **Raw Material warehouse on basic inventory management** (fewer SKUs, simpler flow). This reduces WMS configuration overhead.
 
 2. **Cross-FRD dependency (FRD05 - Production):** Production FRD05 (PRD009) defines Manufacturing warehouses (1001 Mfg In, 1002 Mfg Out, 2001 Assembly In, 2002 Assembly Out). Ensure the transfer order flow from the inventory warehouses defined here to the production warehouses is mapped end-to-end. The FRD does not explicitly reference these production warehouses.
 
@@ -113,7 +150,7 @@ Overall assessment: **Functional design with standard D365 inventory foundations
 | Aspect | Rating | Comment |
 |--------|--------|---------|
 | PR-based procurement workflow | Standard OOB | Aligns with FRD07 Procurement |
-| Project reservation from PR | **See GAP analysis** | IN02-001 flagged as GAP |
+| Project reservation from PR | **>> NEEDS REVIEW <<** | IN02-001 flagged as GAP -- may not be a true GAP |
 | Quality check on device (pass/fail) | Standard OOB | WMS quality check step or Inventory Status |
 | Non-conformance location routing | Standard OOB | Location directives can route failed items |
 | Material requests via item requirements | Standard OOB | Project item requirements |
@@ -132,13 +169,17 @@ Overall assessment: **Functional design with standard D365 inventory foundations
 | **Assessed Complexity** | Medium |
 | **Is it truly a GAP?** | **Partially -- depends on interpretation** |
 
+**>> ATTENTION AREA: IN02-001 GAP may not be a true GAP**
+
+> In standard D365, reservation is typically done at the Purchase Order level or via Item Requirements on Projects, not directly from the Purchase Requisition. Project Item Requirements provide automatic reservation of on-hand inventory and automatic generation of planned purchase orders for shortages -- this is the standard D365 approach for project-driven material requests and may eliminate this GAP entirely.
+
 **Analysis:** In standard D365, reservation is typically done at the Purchase Order level or via Item Requirements on Projects, not directly from the Purchase Requisition. However, there are two important considerations:
 
 1. **If the goal is to reserve existing on-hand stock when a PR is created for a project**, this can be achieved through **Project Item Requirements** instead of Purchase Requisitions. Item Requirements on projects allow reservation of on-hand inventory and generate planned purchase orders for shortages. This is the **standard D365 approach for project-driven material requests** and may eliminate this GAP entirely.
 
 2. **If the goal is to reserve against incoming PO quantities triggered by the PR**, this is not standard. D365 supports marking (PR line to PO line) but not physical reservation against unreceived PO quantity.
 
-**Recommendation:** Replace the PR-based reservation workflow with **Project Item Requirements** (available in Project Management and Accounting module). This provides:
+**>> ENHANCEMENT:** Replace the PR-based reservation workflow with **Project Item Requirements** (available in Project Management and Accounting module). This provides:
 - Automatic reservation of on-hand inventory
 - Automatic generation of planned purchase orders for shortages (via Master Planning)
 - Direct project cost linkage
@@ -173,6 +214,8 @@ This aligns with the FRD's own statement: "PR can be done manually by the reques
 | Negative adjustment for scrap | Standard OOB | Inventory adjustment journal |
 | Scrap items to specific warehouse | Standard OOB | Transfer to scrap warehouse/location |
 | Min/Max report | Standard OOB | Standard coverage reporting |
+| Material Delivery Form (IN03-001) | **>> NEEDS REVIEW <<** | Likely not a true GAP -- see GAP analysis below |
+| Item splitting approach (IN03-009) | **>> NEEDS REVIEW <<** | True GAP but proposed approach is suboptimal -- see GAP analysis below |
 
 #### GAP Analysis: IN03-001 -- Material Delivery Form
 
@@ -184,6 +227,10 @@ This aligns with the FRD's own statement: "PR can be done manually by the reques
 | **Assessed Complexity** | Low-Medium |
 | **Is it truly a GAP?** | **Likely not a true GAP -- standard functionality may cover this** |
 
+**>> ATTENTION AREA: IN03-001 Material Delivery Form likely not a true GAP**
+
+> The "Material Delivery Form" is described as a paper-based process where the warehouse records raw material usage per project. In D365, this function is served by the Production Picking List Journal, Project Item Consumption Journal, or Transfer Order with project reference -- all of which maintain a record of what was delivered, when, and for which project.
+
 **Analysis:** The "Material Delivery Form" is described as a paper-based process where the warehouse records raw material usage per project (Length x Width in square meters). In D365, this function is served by:
 
 1. **Production Picking List Journal** -- records what was picked from inventory for a production order (linked to project via the production order).
@@ -192,7 +239,7 @@ This aligns with the FRD's own statement: "PR can be done manually by the reques
 
 All three maintain a record of what was delivered, when, and for which project.
 
-**Recommendation:** Use the **Production Picking List** as the system equivalent of the Material Delivery Form. If additional fields are needed (e.g., Length x Width calculation, cut piece tracking), add them as custom fields on the picking list journal line. This is a minor form extension (Low complexity), not a full custom form build.
+**>> ENHANCEMENT:** Use the **Production Picking List** as the system equivalent of the Material Delivery Form. If additional fields are needed (e.g., Length x Width calculation, cut piece tracking), add them as custom fields on the picking list journal line. This is a minor form extension (Low complexity), not a full custom form build.
 
 Alternatively, if the Material Delivery Form needs to be a standalone document for warehouse internal use, create a simple **Power Apps canvas app** that reads from the picking list journal and displays it in the warehouse-friendly format.
 
@@ -206,6 +253,10 @@ Alternatively, if the Material Delivery Form needs to be a standalone document f
 | **Assessed Complexity** | Medium-High |
 | **Is it truly a GAP?** | **Yes -- true GAP, but the proposed approach (avoiding adjustment journals) may be incorrect** |
 
+**>> ATTENTION AREA: IN03-009 item splitting approach is suboptimal**
+
+> The scenario is: a 6-meter pipe is cut into smaller pieces for different projects. The FRD proposes using inventory adjustment journals which creates artificial gain/loss postings and requires manual cost entry. A lightweight production order (cutting BOM) approach provides cost traceability and audit trail without these drawbacks.
+
 **Analysis:** The scenario is: a 6-meter pipe is cut into smaller pieces for different projects. The warehouse needs to track each piece separately. The FRD mentions using "inventory adjustment journals" for this but also flags wanting to do it "without inventory adjustment."
 
 This is a genuine process challenge. D365 does not have a native "split inventory" function. The standard approaches are:
@@ -216,7 +267,7 @@ This is a genuine process challenge. D365 does not have a native "split inventor
 
 3. **BOM Journal / Production Order:** Create a simple "cutting" BOM where the input is 1x 6m pipe and the output is 3x 2m pipes. Process this as a mini production order. This maintains full cost traceability without artificial adjustments.
 
-**Recommendation:** Use a **lightweight production order (cutting order)** with a single-level BOM:
+**>> ENHANCEMENT:** Use a **lightweight production order (cutting order)** with a single-level BOM:
 - Input: 1x Item "Pipe SS" (Size: 6m)
 - Output: 3x Item "Pipe SS" (Size: 2m) + scrap if applicable
 
@@ -261,6 +312,7 @@ This approach:
 | Negative adjustment for scrap | Standard OOB | Adjustment journal with reason codes |
 | Task management for operations | Standard OOB | Can use D365 Activity/Task or Planner integration |
 | Item search by attributes | Standard OOB | Product attributes + attribute-based search |
+| Item creation workflow (IN04-002) | **>> NEEDS REVIEW <<** | Product Lifecycle State may eliminate custom workflow -- see GAP analysis below |
 
 #### GAP Analysis: IN04-002 -- Workflow Approval on Item Creation
 
@@ -271,6 +323,10 @@ This approach:
 | **FRD Classification** | GAP |
 | **Assessed Complexity** | Medium |
 | **Is it truly a GAP?** | **Partially -- D365 has a product release workflow, but not a full item creation approval workflow** |
+
+**>> ATTENTION AREA: IN04-002 item creation workflow has a simpler OOB alternative**
+
+> The requirement is that engineers create items and a designated person must approve before the item can be used in transactions. D365 Product Lifecycle State can achieve this by blocking items in "Draft" state from all transactions until changed to "Active" after approval -- reducing this from a full custom workflow to a configuration + low-code solution.
 
 **Analysis:** The requirement is:
 - Engineers create items
@@ -285,7 +341,7 @@ D365 has the following relevant standard features:
 
 3. **Engineering Change Management (ECM):** If Technica has the Engineering Change Management module, it provides full product creation workflows with approval gates, version control, and readiness checks. This is the most complete solution.
 
-**Recommendation:** Use **Product Lifecycle State** as the primary control mechanism:
+**>> ENHANCEMENT:** Use **Product Lifecycle State** as the primary control mechanism:
 - Create lifecycle states: "Draft" (blocked from transactions), "Active" (allowed), "Discontinued" (blocked)
 - New items are created in "Draft" state
 - Use a **Power Automate flow** or **simple custom workflow** to route draft items for approval
@@ -354,6 +410,7 @@ If Engineering Change Management is licensed, use it instead -- it provides a co
 | Two-stage pick/put | Standard OOB | Work template configuration |
 | LP receiving | Standard OOB | Standard WMS |
 | Shipment confirmation | Standard OOB | Standard |
+| Transfer order workflow (TO0002) | **>> NEEDS REVIEW <<** | No OOB workflow exists -- see GAP analysis below |
 
 #### GAP Analysis: TO0002 -- Workflow in Transfer Order
 
@@ -365,9 +422,13 @@ If Engineering Change Management is licensed, use it instead -- it provides a co
 | **Assessed Complexity** | Medium |
 | **Is it truly a GAP?** | **Yes -- D365 does not have a standard workflow for transfer orders** |
 
+**>> ATTENTION AREA: TO0002 transfer order workflow -- simpler approach available**
+
+> D365 F&O does not provide an out-of-the-box workflow for transfer order approval. While this is a genuine GAP, a Power Automate approval flow is a lower-cost alternative to a full custom X++ workflow, especially if the approval requirement is simple (single approver, no conditional routing).
+
 **Analysis:** D365 F&O does not provide an out-of-the-box workflow for transfer order approval. This is a genuine GAP if Technica requires approval before inter-warehouse transfers can be processed.
 
-**Recommendation:** Two options:
+**>> ENHANCEMENT:** Two options:
 
 1. **Custom Workflow (X++ extension):** Build a transfer order workflow using the D365 workflow framework. This requires developer effort to register the transfer order document in the workflow engine, create approval steps, and add the workflow toolbar to the transfer order form. **Complexity: Medium (estimated 3-5 days development).**
 
@@ -414,11 +475,15 @@ This is a standard WMS inventory movement operation using the mobile device. No 
 | Auto-adjustment calculation | Standard OOB | Built-in |
 | Profit/loss posting | Standard OOB | Posting profile configuration |
 | Mobile device counting | Standard OOB | WMS cycle count |
-| Spot checks | Standard OOB | Cycle counting plans |
+| Spot checks | **>> NEEDS REVIEW <<** | Should use Cycle Counting Plans -- see recommendation |
+
+**>> ATTENTION AREA: Biweekly spot checks should use Cycle Counting Plans**
+
+> The FRD describes biweekly spot checks but does not specify using D365 Cycle Counting Plans, which automate item/location selection and trigger counting work on the mobile device. Using ad-hoc counting journals instead is less efficient and less consistent.
 
 **Recommendations:**
 
-1. **For biweekly spot checks**, use **D365 Cycle Counting Plans** rather than ad-hoc counting journals. Cycle counting plans can be configured to:
+1. **>> ENHANCEMENT:** For biweekly spot checks, use **D365 Cycle Counting Plans** rather than ad-hoc counting journals. Cycle counting plans can be configured to:
    - Automatically select items/locations for counting based on criteria
    - Set counting frequency per item/location
    - Trigger counting work on the mobile device
@@ -473,6 +538,11 @@ The decision to enable inventory journal approval workflow is a **good governanc
 ## Risk Flags
 
 ### 1. Quality Management Exclusion -- HIGH RISK
+
+**>> ATTENTION AREA: Quality Management exclusion is risky for a manufacturing company**
+
+> The FRD explicitly states "Quality management module will not be used to avoid long cycles." For a manufacturing company that tracks non-conformances (referenced in both this FRD and Production FRD05), excluding Quality Management creates a gap in traceability for non-conformance documentation, vendor quality scoring, quality order integration with production, and corrective action tracking.
+
 The FRD explicitly states "Quality management module will not be used to avoid long cycles." For a manufacturing company that tracks non-conformances (referenced in both this FRD and Production FRD05), excluding Quality Management creates a gap in traceability. The proposed alternative (quick pass/fail on device + non-conformance location routing) is functional but lacks:
 - Non-conformance documentation and root cause tracking
 - Vendor quality scoring (needed for Procurement FRD07 vendor evaluation)
@@ -498,6 +568,11 @@ Multiple comments remain open:
 These indicate the FRD has not been through a final review cycle. Requirements may shift during implementation if these are not closed before development starts.
 
 ### 4. Cross-FRD Warehouse Structure Alignment -- MEDIUM RISK
+
+**>> ATTENTION AREA: Cross-FRD warehouse structure not aligned across FRD05/FRD06/FRD09**
+
+> This FRD defines inventory warehouses (Components, Raw Material) but does not reference the Production warehouses defined in FRD05 (1001 Mfg In, 1002 Mfg Out, 2001 Assembly In, 2002 Assembly Out) or the In-Transit warehouse from FRD06 (Logistics). The end-to-end material flow across all warehouses needs a single integrated warehouse map that spans all three FRDs.
+
 This FRD defines inventory warehouses (Components, Raw Material) but does not reference the Production warehouses defined in FRD05 (1001 Mfg In, 1002 Mfg Out, 2001 Assembly In, 2002 Assembly Out) or the In-Transit warehouse from FRD06 (Logistics). The end-to-end material flow across all warehouses needs a single integrated warehouse map that spans all three FRDs.
 
 ### 5. Master Planning Requester Assignment -- LOW RISK

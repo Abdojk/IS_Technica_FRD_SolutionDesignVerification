@@ -7,6 +7,32 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | Overall | FRD13 is dangerously incomplete — expand to include ALL integrations (CRM-F&O, not just CAD-F&O) | [Missing Integrations: CRM to F&O](#missing-integrations-crm-to-fo) |
+| 2 | **CRITICAL** | Overall | Define staging platform technology (Azure SQL, Azure Data Factory, or direct API) — do not leave to developer interpretation | [INT001 - Integration Overview](#int001---integration-overview-architecture-summary) |
+| 3 | **CRITICAL** | Overall | Add field-level data mapping specifications for every data flow | [INT002 - F&O to Staging](#int002---fo-to-staging-3-data-flows) |
+| 4 | **CRITICAL** | Overall | Define error handling strategy per integration: retry policy, dead-letter queue, notification recipients, manual intervention | [INT001 - Integration Overview](#int001---integration-overview-architecture-summary) |
+| 5 | **CRITICAL** | MISSING | Add Dual-Write for Account/Contact sync (CRM <--> F&O) — entirely missing from FRD13 | [MISSING-02](#missing-02-account--contact-synchronization-crm-to-fo) |
+| 6 | **CRITICAL** | MISSING | Add Power Automate for DFI-triggered Opportunity/Quotation creation in F&O — entirely missing from FRD13 | [MISSING-01](#missing-01-crm-opportunities-to-fo-projectsquotations) |
+| 7 | **HIGH** | Overall | Add integration monitoring and alerting layer (Azure Monitor, Power BI dashboard, or Application Insights) | [INT001 - Integration Overview](#int001---integration-overview-architecture-summary) |
+| 8 | **HIGH** | INT002 | Replace custom PUSHED flag with D365 Change Tracking on data entities for delta detection | [INT002 - F&O to Staging](#int002---fo-to-staging-3-data-flows) |
+| 9 | **HIGH** | INT002 | Use D365 Business Events + Service Bus for Production Order Status instead of periodic polling | [INT002 - F&O to Staging](#int002---fo-to-staging-3-data-flows) |
+| 10 | **HIGH** | INT003 | Gate attribute auto-creation with quarantine/review queue instead of blind auto-creation | [INT003 - CAD to Staging](#int003---cad-to-staging-4-data-flows) |
+| 11 | **HIGH** | INT003 | Route manufactured items through Engineering Change Management (FRD03) rather than direct product creation | [INT003 - CAD to Staging](#int003---cad-to-staging-4-data-flows) |
+| 12 | **HIGH** | MISSING | Add Power Automate for Timesheet push CRM --> F&O Project Hour Journals | [MISSING-03](#missing-03-timesheets-from-crm-to-fo) |
+| 13 | **HIGH** | MISSING | Add Power Automate for Trip/Mission --> Travel Requisition (CRM --> F&O) | [MISSING-04](#missing-04-tripsmissions-from-crm-to-fo-travel-requisitions) |
+| 14 | **MEDIUM** | INT003 | Unify BOM imports into single integration with purpose flag instead of two separate integrations | [INT003 - CAD to Staging](#int003---cad-to-staging-4-data-flows) |
+| 15 | **MEDIUM** | MISSING | Add Won/Lost status feedback F&O --> CRM via Business Events + Power Automate | [MISSING-05](#missing-05-wonlost-status-sync-fo-back-to-crm) |
+
+**Totals:** 6 CRITICAL | 7 HIGH | 2 MEDIUM | 0 LOW
+
+---
+
 ## Executive Summary
 
 FRD13 is the **most critical cross-cutting document** in Technica's FRD set. Every other FRD (Sales, R&D, Production, Project Accounting, Logistics) references integrations that should be defined here. However, this document is **severely underdeveloped** relative to its importance. At only 8 pages (including cover and sign-off), it covers only **one integration domain: CAD-to-F&O via a staging database**. It entirely omits the CRM-to-F&O integrations (Opportunities, DFI, Accounts, Contacts, Timesheets, Trips/Missions) that FRD01, FRD02, and FRD04 depend on.
@@ -33,27 +59,39 @@ Overall assessment: **Incomplete and insufficient as an integration architecture
 |--------|--------|---------|
 | Staging database as middleware | Acceptable | Common pattern for non-Microsoft CAD systems; avoids direct coupling |
 | Data flow direction clarity | Good | PUSH/PULL semantics are clearly stated per entity |
-| Frequency definition ("periodically") | Insufficient | "30 minutes or 2 hours" is not a requirement; needs SLA-driven definition |
-| Error handling | Missing | No mention of retry logic, dead-letter queues, or failure notifications |
-| Data mapping / field specifications | Missing | No field-level mapping for any entity |
-| Conflict resolution | Missing | No rules for concurrent edits (e.g., item modified in both CAD and F&O) |
-| Monitoring & alerting | Missing | No integration dashboard, health checks, or failure alerts |
-| Security & authentication | Missing | No mention of how staging database is secured or accessed |
-| Technology platform | Missing | No specification of whether staging is SQL Server, Azure SQL, API layer, or file-based |
+| Frequency definition ("periodically") | **>> NEEDS REVIEW <<** | "30 minutes or 2 hours" is not a requirement; needs SLA-driven definition |
+| Error handling | **>> NEEDS ARCHITECTURE <<** | No mention of retry logic, dead-letter queues, or failure notifications |
+| Data mapping / field specifications | **>> NEEDS ARCHITECTURE <<** | No field-level mapping for any entity |
+| Conflict resolution | **>> NEEDS ARCHITECTURE <<** | No rules for concurrent edits (e.g., item modified in both CAD and F&O) |
+| Monitoring & alerting | **>> NEEDS ARCHITECTURE <<** | No integration dashboard, health checks, or failure alerts |
+| Security & authentication | **>> NEEDS ARCHITECTURE <<** | No mention of how staging database is secured or accessed |
+| Technology platform | **>> NEEDS ARCHITECTURE <<** | No specification of whether staging is SQL Server, Azure SQL, API layer, or file-based |
+
+**>> ATTENTION AREA: Staging platform technology is undefined**
+
+> The FRD describes a "staging database" but never specifies the technology. This is a foundational architecture decision that affects cost, performance, security, and maintainability. Leaving it to developer interpretation will result in inconsistent implementations.
+
+**>> ATTENTION AREA: Error handling strategy is entirely absent**
+
+> No data flow in FRD13 defines what happens when a record fails to sync. There is no retry logic, no dead-letter queue, no notification mechanism, and no manual intervention process. Every integration must have a defined error handling strategy before development begins.
+
+**>> ATTENTION AREA: Integration monitoring and alerting does not exist**
+
+> There is no mention of how the project team or Technica IT will know whether integrations are running, healthy, or failing. Without monitoring, integration failures will be discovered by end users when data is missing -- the worst possible detection method.
 
 **Recommendations:**
 
-1. **Define the staging platform explicitly.** The staging database could be:
+1. **>> ENHANCEMENT (CRITICAL):** Define the staging platform explicitly. The staging database could be:
    - **Option A (Recommended): Azure SQL Database** with stored procedures for data validation. This provides cloud-native monitoring, geo-redundancy, and easy connectivity from both F&O (via Data Management Framework or custom services) and CAD.
    - **Option B: Azure Data Lake + Azure Data Factory (ADF)** for more complex transformation pipelines. Better if data volumes are large or transformations are complex.
    - **Option C: D365 F&O Data Entities exposed via OData** with the CAD system calling F&O APIs directly (no staging). Simpler but creates tighter coupling.
 
-2. **Define polling intervals based on business requirements, not convenience.** For each data flow, answer: "What is the maximum acceptable delay between source change and target availability?" For example:
+2. **>> ENHANCEMENT (CRITICAL):** Define polling intervals based on business requirements, not convenience. For each data flow, answer: "What is the maximum acceptable delay between source change and target availability?" For example:
    - Production Order Status: If assembly managers need real-time visibility, 30-minute polling may be too slow. Consider event-driven push via Azure Service Bus.
    - Raw Material master data: Daily sync may suffice since new raw materials are infrequent.
    - BOM Lines (on-demand): This is already correctly specified as pull-on-demand.
 
-3. **Add an integration monitoring layer.** Every integration must have:
+3. **>> ENHANCEMENT (HIGH):** Add an integration monitoring layer. Every integration must have:
    - Success/failure logging per record
    - Dashboard showing last sync time, records processed, errors pending
    - Alert notifications when sync fails or exceeds SLA
@@ -75,11 +113,19 @@ Overall assessment: **Incomplete and insufficient as an integration architecture
 
 | Aspect | Rating | Comment |
 |--------|--------|---------|
-| Data flow #1: Project/WBS push | Needs Detail | Which WBS fields? Only published WBS? What about WBS updates/deletions? |
-| Data flow #2: Raw material push | Needs Detail | Which product fields? What triggers "new" vs "updated"? How are deletions handled? |
-| Data flow #3: Production order status | Needs Detail | Which statuses? All transitions or only specific ones (e.g., Released, Completed)? |
-| "Flagged as PUSHED" mechanism | Good Concept | Delta tracking via flag is a valid pattern, but needs an "Acknowledged" flag from the consumer side |
-| Handling of updates to pushed records | Partially Addressed | Doc mentions "if a pushed item is edited the updated fields will be pushed" -- but field-level delta tracking is complex |
+| Data flow #1: Project/WBS push | **>> NEEDS REVIEW <<** | Which WBS fields? Only published WBS? What about WBS updates/deletions? |
+| Data flow #2: Raw material push | **>> NEEDS REVIEW <<** | Which product fields? What triggers "new" vs "updated"? How are deletions handled? |
+| Data flow #3: Production order status | **>> NEEDS REVIEW <<** | Which statuses? All transitions or only specific ones (e.g., Released, Completed)? |
+| "Flagged as PUSHED" mechanism | **>> NEEDS IMPROVEMENT <<** | Delta tracking via flag is a valid concept, but D365 Change Tracking is a better standard approach |
+| Handling of updates to pushed records | **>> NEEDS REVIEW <<** | Doc mentions "if a pushed item is edited the updated fields will be pushed" -- but field-level delta tracking is complex |
+
+**>> ATTENTION AREA: Custom PUSHED flag is a fragile delta-tracking mechanism**
+
+> The FRD proposes a custom "PUSHED" flag on records to track which records have been sent to staging. While conceptually valid, this approach requires custom code to set/clear the flag, does not handle field-level deltas well, and does not account for consumer acknowledgment. D365 F&O has built-in Change Tracking on data entities that handles this natively.
+
+**>> ATTENTION AREA: Production Order Status uses polling instead of event-driven architecture**
+
+> Polling for status changes introduces latency (30 minutes to 2 hours) and puts unnecessary load on the F&O database. D365 Business Events are purpose-built for this scenario and provide near real-time notifications without polling overhead.
 
 **Recommended D365 Integration Pattern:**
 
@@ -91,16 +137,16 @@ Overall assessment: **Incomplete and insufficient as an integration architecture
 
 **Detailed Recommendations:**
 
-1. **Replace the custom "PUSHED" flag with D365 Change Tracking.** D365 F&O has built-in change tracking on data entities. When enabled, the system automatically tracks which records have changed since the last export. This eliminates the need for custom flag fields and handles updates/inserts/deletes natively.
+1. **>> ENHANCEMENT (HIGH):** Replace the custom "PUSHED" flag with D365 Change Tracking. D365 F&O has built-in change tracking on data entities. When enabled, the system automatically tracks which records have changed since the last export. This eliminates the need for custom flag fields and handles updates/inserts/deletes natively.
 
-2. **For Production Order Status, use D365 Business Events instead of polling.** Business Events are purpose-built for this scenario:
+2. **>> ENHANCEMENT (HIGH):** For Production Order Status, use D365 Business Events instead of polling. Business Events are purpose-built for this scenario:
    - Configure a business event for production order status change
    - Route the event to an Azure Service Bus queue
    - An Azure Function processes the event and writes to staging
    - This gives near real-time status updates (seconds, not minutes/hours)
    - No polling load on the F&O database
 
-3. **Define what "WBS Activities" means at the field level.** The minimum mapping should include:
+3. **>> ENHANCEMENT (CRITICAL):** Define what "WBS Activities" means at the field level. The minimum mapping should include:
 
    | F&O Field | Staging Field | Notes |
    |-----------|--------------|-------|
@@ -132,10 +178,22 @@ Overall assessment: **Incomplete and insufficient as an integration architecture
 | Aspect | Rating | Comment |
 |--------|--------|---------|
 | Level 1 item validation | Good | Requiring Level 1 products to pre-exist in F&O prevents orphan records |
-| Attribute-to-Route mapping | Complex - Needs Architecture | Custom screen with multi-attribute route selection is a significant customization |
-| Auto-creation of missing attributes | Risky | Automatically creating attribute values in F&O from CAD could pollute master data |
-| BOM for Quotation vs. Manufacturing separation | Good | Different business contexts justify separate flows |
+| Attribute-to-Route mapping | **>> NEEDS ARCHITECTURE <<** | Custom screen with multi-attribute route selection is a significant customization |
+| Auto-creation of missing attributes | **>> RISKY <<** | Automatically creating attribute values in F&O from CAD could pollute master data |
+| BOM for Quotation vs. Manufacturing separation | **>> NEEDS IMPROVEMENT <<** | Different business contexts justify separate flows, but should be unified with a purpose flag |
 | Serial Number tracking | Standard | Well-suited for serialized manufacturing |
+
+**>> ATTENTION AREA: Attribute auto-creation will pollute F&O master data**
+
+> The FRD states that if an attribute value from CAD does not exist in F&O, it is automatically created. This is dangerous because: misspellings and duplicates will be introduced (e.g., "Stainless Steel" vs "stainless steel" vs "SS"), orphan attributes will clutter the system, and any attribute governance process is bypassed. A quarantine/review queue must gate auto-creation.
+
+**>> ATTENTION AREA: Manufactured items bypass Engineering Change Management**
+
+> The FRD describes direct creation of manufactured items in F&O from CAD data. However, FRD03 establishes Engineering Change Management (ECM) as the R&D framework. CAD items should arrive as Engineering Products (not standard Released Products) to ensure Product Readiness Policy checks are applied and items go through proper engineering release before production use.
+
+**>> ATTENTION AREA: Two separate BOM integrations should be unified**
+
+> The FRD defines BOM for Quotation and BOM for Manufacturing as two separate integration flows. D365 supports BOM versions by type, so a single BOM import entity with a "Purpose" field (Quotation vs. Manufacturing) in the staging table is simpler, more maintainable, and avoids duplicating integration logic.
 
 **Deep-Dive: Attribute-to-Route Mapping (INT003 Item 1.b)**
 
@@ -168,25 +226,25 @@ This is the most complex integration requirement in the document. The FRD descri
 
 **Detailed Recommendations:**
 
-1. **The attribute auto-creation policy is dangerous and should be gated.** If CAD sends an attribute value that does not exist in F&O, automatically creating it could:
+1. **>> ENHANCEMENT (HIGH):** The attribute auto-creation policy is dangerous and should be gated. If CAD sends an attribute value that does not exist in F&O, automatically creating it could:
    - Introduce misspellings or duplicates (e.g., "Stainless Steel" vs "stainless steel" vs "SS")
    - Create orphan attributes that clutter the system
    - Bypass any attribute governance process
 
    **Recommendation:** Instead of auto-creating, place unknown attributes in a **quarantine/review queue**. A data steward reviews and either approves (creates the attribute) or rejects (maps to an existing attribute). This adds a human checkpoint without blocking the integration for known attributes.
 
-2. **BOM for Quotation vs. BOM for Manufacturing should use the same integration mechanism with different BOM types.** D365 supports BOM versions by type. Rather than building two separate integrations:
+2. **>> ENHANCEMENT (MEDIUM):** BOM for Quotation vs. BOM for Manufacturing should use the same integration mechanism with different BOM types. D365 supports BOM versions by type. Rather than building two separate integrations:
    - Use a single BOM import entity
    - Distinguish by a "Purpose" field in the staging table (Quotation vs. Manufacturing)
    - The F&O import logic creates the appropriate BOM version type based on this field
 
-3. **Level 1 item pre-existence validation is correct but needs an error workflow.** The FRD states that if a Level 1 item does not exist, "the integration will return an error." Define what happens next:
+3. **>> ENHANCEMENT:** Level 1 item pre-existence validation is correct but needs an error workflow. The FRD states that if a Level 1 item does not exist, "the integration will return an error." Define what happens next:
    - Who gets notified?
    - Does the entire batch fail or just the offending record?
    - Is the failed record retried automatically after the Level 1 item is created?
    - **Recommendation:** Failed records should be moved to an error queue with automatic notification to R&D/Engineering. Successful records in the same batch should proceed. Retry should be automatic on the next polling cycle.
 
-4. **Consider D365 Engineering Change Management (ECM) for manufactured item creation** instead of direct item creation. Since FRD03 already establishes ECM as the R&D framework:
+4. **>> ENHANCEMENT (HIGH):** Consider D365 Engineering Change Management (ECM) for manufactured item creation instead of direct item creation. Since FRD03 already establishes ECM as the R&D framework:
    - CAD items should arrive as Engineering Products (not standard Released Products)
    - This ensures Product Readiness Policy checks are applied
    - Items go through proper engineering release before they can be used in production
@@ -196,7 +254,9 @@ This is the most complex integration requirement in the document. The FRD descri
 
 ## Missing Integrations: CRM to F&O
 
-**This is the most significant gap in FRD13.** The following integrations are referenced across FRD01, FRD02, and FRD04 but are completely absent from this document:
+**>> ATTENTION AREA: This is the most significant gap in FRD13**
+
+> The following integrations are referenced across FRD01, FRD02, and FRD04 but are completely absent from this document. FRD13 covers approximately 30% of the integrations that other FRDs depend on. Any development work on FRD01, FRD02, or FRD04 that touches integration will be blocked or will proceed with ad-hoc designs if these integrations are not defined.
 
 ### MISSING-01: CRM Opportunities to F&O Projects/Quotations
 
@@ -209,7 +269,7 @@ This is the most complex integration requirement in the document. The FRD descri
 | Direction | CRM --> F&O | One-way push | |
 | Feedback | F&O quotation number written back to CRM opportunity | Power Automate return step | |
 
-**Recommendation:** Use **Power Automate with the D365 F&O connector** (Fin & Ops Apps connector). The flow triggers on DFI approval status change in Dataverse, calls F&O data entities to create the opportunity/project quotation, and writes the F&O reference number back to the CRM record. This is more appropriate than Dual-Write because it is event-driven (not continuous sync) and involves data transformation (DFI fields mapped to F&O quotation fields).
+**>> ENHANCEMENT (CRITICAL):** Use **Power Automate with the D365 F&O connector** (Fin & Ops Apps connector). The flow triggers on DFI approval status change in Dataverse, calls F&O data entities to create the opportunity/project quotation, and writes the F&O reference number back to the CRM record. This is more appropriate than Dual-Write because it is event-driven (not continuous sync) and involves data transformation (DFI fields mapped to F&O quotation fields).
 
 ### MISSING-02: Account & Contact Synchronization (CRM to F&O)
 
@@ -222,7 +282,7 @@ This is the most complex integration requirement in the document. The FRD descri
 | Direction | Bidirectional | CRM <--> F&O | |
 | Conflict | Last-write-wins or source-system-wins | Configurable in Dual-Write | |
 
-**Recommendation:** **Dual-Write is the standard Microsoft-recommended pattern** for Account/Contact sync between Dataverse and F&O. Out-of-the-box mapping templates exist. Key considerations:
+**>> ENHANCEMENT (CRITICAL):** **Dual-Write is the standard Microsoft-recommended pattern** for Account/Contact sync between Dataverse and F&O. Out-of-the-box mapping templates exist. Key considerations:
 - Enable Dual-Write for Accounts (CRM) <--> Customers/Vendors (F&O)
 - Enable Dual-Write for Contacts (CRM) <--> Contact Persons (F&O)
 - Parent-child hierarchy in CRM must map to Customer Hierarchy or Invoice Account relationships in F&O
@@ -239,7 +299,7 @@ This is the most complex integration requirement in the document. The FRD descri
 | Direction | CRM --> F&O | One-way push | |
 | Validation | Must pass F&O timesheet approval workflow | F&O workflow handles approval | |
 
-**Recommendation:** Use **Power Automate** to push approved CRM timesheets to F&O as hour journal lines or timesheet lines. Critical design decisions:
+**>> ENHANCEMENT (HIGH):** Use **Power Automate** to push approved CRM timesheets to F&O as hour journal lines or timesheet lines. Critical design decisions:
 - **Option A:** Push as F&O Timesheet entries (subject to F&O approval workflow). This means double approval (CRM + F&O). May be required for audit reasons.
 - **Option B:** Push as approved hour journal entries directly to project cost. Bypasses F&O approval since CRM already approved. Faster but less controlled.
 - **Recommendation:** Option A for the initial implementation. It is safer and provides audit trail in both systems. Optimize to Option B later if dual approval proves burdensome.
@@ -255,7 +315,7 @@ This is the most complex integration requirement in the document. The FRD descri
 | Direction | CRM --> F&O | One-way push | |
 | Post-creation | User completes expense details in F&O | Manual in F&O | |
 
-**Recommendation:** Use **Power Automate** triggered on CRM Trip/Mission approval. Create a draft Travel Requisition in F&O using the Travel Requisition data entity. Pre-populate as many fields as possible from CRM (traveler, dates, destination, purpose) to minimize re-entry in F&O. As noted in the FRD01 review, consider whether a **Model-Driven Power App** could replace the CRM custom entity for trips entirely.
+**>> ENHANCEMENT (HIGH):** Use **Power Automate** triggered on CRM Trip/Mission approval. Create a draft Travel Requisition in F&O using the Travel Requisition data entity. Pre-populate as many fields as possible from CRM (traveler, dates, destination, purpose) to minimize re-entry in F&O. As noted in the FRD01 review, consider whether a **Model-Driven Power App** could replace the CRM custom entity for trips entirely.
 
 ### MISSING-05: Won/Lost Status Sync (F&O back to CRM)
 
@@ -267,7 +327,7 @@ This is the most complex integration requirement in the document. The FRD descri
 | Data | Opportunity reference, win/loss status, reason | F&O Business Event --> Power Automate --> Dataverse update | |
 | Direction | F&O --> CRM | One-way push | |
 
-**Recommendation:** Use **D365 F&O Business Events** to fire when a project quotation status changes to Won or Lost. Route the event via Azure Service Bus to a Power Automate flow that updates the CRM Opportunity status. This closes the feedback loop so sales reps see outcomes in CRM without logging into F&O.
+**>> ENHANCEMENT (MEDIUM):** Use **D365 F&O Business Events** to fire when a project quotation status changes to Won or Lost. Route the event via Azure Service Bus to a Power Automate flow that updates the CRM Opportunity status. This closes the feedback loop so sales reps see outcomes in CRM without logging into F&O.
 
 ---
 

@@ -7,16 +7,52 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | CRM Integration (EM001-001) | Integration mechanism is undefined — must specify Power Automate, Dual-Write, or custom API before development | [EM001 Part A - CRM Integration](#em001-part-a---crm-integration-trip-request-to-travel-requisition) |
+| 2 | **CRITICAL** | Workflow Design | Workflow approval matrix is a placeholder — Technica must provide actual workflows before configuration can proceed | [EM001 Part B - Travel Requisition](#em001-part-b---travel-requisition-process) |
+| 3 | **CRITICAL** | Missing Data | Eight categories of setup data missing from Technica — blocks configuration and design validation | [Risk Flags](#risk-flags) |
+| 4 | **HIGH** | CRM Integration (EM001-001) | Push line-level data from CRM to F&O to eliminate double entry problem | [EM001 Part A - CRM Integration](#em001-part-a---crm-integration-trip-request-to-travel-requisition) |
+| 5 | **HIGH** | CRM Integration (EM001-001) | Produce formal field mapping document (CRM Trip -> F&O Travel Requisition) to reduce integration defects | [EM001 Part A - CRM Integration](#em001-part-a---crm-integration-trip-request-to-travel-requisition) |
+| 6 | **HIGH** | Customer Reimbursable (EM001-004) | "Charged to Customer" GAP needs end-to-end design — use project billing for project expenses + custom enum + clearing account for non-project | [GAP 2: EM001-004](#gap-2-em001-004---expense-report-charged-to-customer-checkbox) |
+| 7 | **HIGH** | Worker Setup | Create onboarding checklist for financial dimension + vendor mapping per employee — missing either causes transaction failures | [Setup Review](#worker-setup-employee-financial-dimension--vendor-mapping) |
+| 8 | **HIGH** | Expense Policy | Expense policy configuration is entirely absent — governance gap that must be addressed with Technica's internal policies | [Risk Flags](#risk-flags) |
+| 9 | **HIGH** | Customer Reimbursable (EM001-004) | Downstream debit note process undefined — checkbox alone is cosmetic without billing automation | [Risk Flags](#risk-flags) |
+| 10 | **MEDIUM** | Customer Reimbursable (EM001-004) | Add Power Automate notification to AR team for reimbursable expenses to prevent missed invoicing | [GAP 2: EM001-004](#gap-2-em001-004---expense-report-charged-to-customer-checkbox) |
+| 11 | **MEDIUM** | Per Diem | Provide Technica with pre-populated per diem template to accelerate data collection | [EM001 Part B - Travel Requisition](#em001-part-b---travel-requisition-process) |
+| 12 | **MEDIUM** | Per Diem | Configure per diem reduction rules for company-provided meals/hotel | [Setup Review](#per-diem-configuration) |
+| 13 | **MEDIUM** | Cash Advance | Start with manual journal posting; switch to auto-post after go-live stabilization | [EM001 Part C - Cash Advance](#em001-part-c---cash-advance-process) |
+| 14 | **MEDIUM** | Mobile App (EM001-003) | Include mobile expense workspace in deployment plan and test OCR with local receipts | [EM001 Part D - Expense Report](#em001-part-d---expense-report-process) |
+| 15 | **MEDIUM** | Intercompany | No mention of intercompany expense handling — verify if multi-entity scenario applies | [Risk Flags](#risk-flags) |
+| 16 | **MEDIUM** | Vendor Settlement | Employee reimbursement payment method undefined — must define disbursement process | [Risk Flags](#risk-flags) |
+| 17 | **LOW** | Cash Advance | Add payment notification to employee via Power Automate when cash advance is paid | [EM001 Part C - Cash Advance](#em001-part-c---cash-advance-process) |
+| 18 | **LOW** | Document Quality | FRD mislabels itself as "Accounts Payable requirements" — templating error | [Executive Summary](#executive-summary) |
+
+**Totals:** 3 CRITICAL | 6 HIGH | 7 MEDIUM | 2 LOW
+
+---
+
 ## Executive Summary
 
 This FRD covers a single consolidated process (EM001) encompassing the full employee expense lifecycle: **Travel Requisition, Cash Advance, and Expense Report**. The solution makes **good use of D365 F&O standard Expense Management capabilities** -- per diem setup, shared/expense categories, cash advance processing, expense report reconciliation against travel requisitions, and project cost allocation via expense categories. Of 9 requirements, **7 are FIT and 2 are GAP**.
 
 However, the document reveals several structural concerns:
 
-1. **The CRM-to-F&O Travel Requisition integration (EM001-001) is the most significant item** and directly depends on FRD01's Trips & Missions custom entity. The integration design is superficially described -- fields are listed but the mechanism, error handling, and data mapping are undefined.
-2. **Critical setup data is missing from Technica** (workflows, policies, per diem rates, shared categories with accounts, payment methods). The solution design cannot be fully validated without this data.
-3. **The "expense charged to customer" GAP (EM001-004)** is described too vaguely. The business need (debit note to customer for reimbursable expenses) is clear, but the proposed solution (a checkbox) is incomplete -- it does not address how the downstream debit note is generated.
-4. **The document mislabels itself** as "Accounts Payable requirements" in the introduction, suggesting it was templated from another FRD without proper review.
+**>> ATTENTION AREA: CRM integration design is superficial**
+> The CRM-to-F&O Travel Requisition integration (EM001-001) is the most significant item and directly depends on FRD01's Trips & Missions custom entity. The integration design is superficially described -- fields are listed but the mechanism, error handling, and data mapping are undefined.
+
+**>> ATTENTION AREA: Critical setup data missing from Technica**
+> Workflows, policies, per diem rates, shared categories with accounts, payment methods -- all are pending. The solution design cannot be fully validated without this data.
+
+**>> ATTENTION AREA: "Charged to Customer" GAP is incomplete**
+> The "expense charged to customer" GAP (EM001-004) is described too vaguely. The business need (debit note to customer for reimbursable expenses) is clear, but the proposed solution (a checkbox) is incomplete -- it does not address how the downstream debit note is generated.
+
+**>> ATTENTION AREA: Document mislabeled**
+> The document mislabels itself as "Accounts Payable requirements" in the introduction, suggesting it was templated from another FRD without proper review.
 
 Overall assessment: **Functional solution leveraging standard D365 capabilities, but incomplete in design details. The two GAPs need sharper definition, and the 8 missing data items from Technica represent a project risk.**
 
@@ -48,24 +84,33 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 | Auto-population of TR fields | Good | Reduces duplicate entry vs. FRD01's concern |
 | Header-to-line validation | Good | Prevents mismatched totals |
 | Dual number sequence (CRM ref + D365) | Good | Maintains traceability without breaking D365 |
-| Integration mechanism | Undefined | No mention of Dual-Write, Power Automate, or custom API |
-| Error handling | Missing | What happens if CRM push fails? No retry/notification logic |
-| Field mapping specification | Incomplete | Only header fields listed; line-level mapping absent |
+| Integration mechanism | **>> NEEDS ARCHITECTURE <<** | No mention of Dual-Write, Power Automate, or custom API |
+| Error handling | **>> NEEDS REVIEW <<** | What happens if CRM push fails? No retry/notification logic |
+| Field mapping specification | **>> NEEDS IMPROVEMENT <<** | Only header fields listed; line-level mapping absent |
+
+**>> ATTENTION AREA: Integration mechanism is undefined**
+> The FRD does not specify how CRM data reaches F&O. Without defining the integration mechanism (Dual-Write, Power Automate, custom API), development cannot begin and each developer may implement differently.
+
+**>> ATTENTION AREA: Error handling is missing**
+> No retry logic, notification mechanism, or fallback behavior is defined for integration failures. A failed CRM push would leave the employee unaware that their Travel Requisition was not created.
+
+**>> ATTENTION AREA: Line-level field mapping is absent**
+> Only header fields are mapped. Line-level data (expense categories, amounts, dates) is not pushed from CRM, creating a two-system data entry problem.
 
 **Recommendations:**
 
-1. **Define the integration mechanism explicitly.** Given this is an event-driven, approval-triggered action (not continuous sync), **Power Automate with Dataverse trigger + F&O connector** is the most appropriate pattern. Dual-Write is overkill for this scenario. A custom API (X++ Data Entity exposed as OData) for Travel Requisition creation would provide the endpoint. Specifically:
+1. **>> ENHANCEMENT (CRITICAL):** Define the integration mechanism explicitly. Given this is an event-driven, approval-triggered action (not continuous sync), **Power Automate with Dataverse trigger + F&O connector** is the most appropriate pattern. Dual-Write is overkill for this scenario. A custom API (X++ Data Entity exposed as OData) for Travel Requisition creation would provide the endpoint. Specifically:
    - Trigger: CRM Trip record status changes to "Approved"
    - Action: Call F&O Travel Requisition OData endpoint to create header + lines
    - Fallback: On failure, set CRM record to "Integration Error" status and notify admin
 
-2. **The "customized field on header" is vague.** Clarify what this field represents. If it is a trip total amount from CRM, map it to the Travel Requisition estimated amount field (standard). If it is something else (e.g., budget limit, trip category), define it precisely. Unnecessary custom fields on standard forms increase upgrade risk.
+2. **>> ENHANCEMENT:** The "customized field on header" is vague. Clarify what this field represents. If it is a trip total amount from CRM, map it to the Travel Requisition estimated amount field (standard). If it is something else (e.g., budget limit, trip category), define it precisely. Unnecessary custom fields on standard forms increase upgrade risk.
 
-3. **Line-level data must be addressed.** Currently, only header fields are auto-populated. The FRD states the user must manually fill expense categories, dates, and amounts in F&O after the integration. This creates a **two-system data entry problem** (also flagged in FRD01 review). Better approach:
+3. **>> ENHANCEMENT (HIGH):** Line-level data must be addressed. Currently, only header fields are auto-populated. The FRD states the user must manually fill expense categories, dates, and amounts in F&O after the integration. This creates a **two-system data entry problem** (also flagged in FRD01 review). Better approach:
    - If CRM captures estimated expenses per category (airfare, hotel, meals), push them as Travel Requisition lines with category, estimated date range, and estimated amount.
    - If CRM only captures a lump sum, create a single Travel Requisition line with a generic "Trip Expense" category and the total amount, then let the user refine in F&O.
 
-4. **Cross-reference with FRD01 (SP001 - Trips & Missions):** FRD01's review recommended considering whether the CRM entity is necessary at all, or whether a Power App could serve the purpose. If the CRM entity is retained, ensure the field structure in CRM aligns with the D365 F&O Travel Requisition entity fields. A field mapping document should be produced as a design artifact.
+4. **>> ENHANCEMENT (HIGH):** Cross-reference with FRD01 (SP001 - Trips & Missions). FRD01's review recommended considering whether the CRM entity is necessary at all, or whether a Power App could serve the purpose. If the CRM entity is retained, ensure the field structure in CRM aligns with the D365 F&O Travel Requisition entity fields. A field mapping document should be produced as a design artifact.
 
 ---
 
@@ -84,21 +129,27 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 |--------|--------|---------|
 | Travel Requisition creation | Standard OOB | Clean form, proper fields |
 | Financial dimension defaulting | Standard OOB | From worker employment record |
-| Workflow (Manager -> HR) | Standard OOB | Needs Technica's actual approval matrix |
+| Workflow (Manager -> HR) | **>> NEEDS REVIEW <<** | Needs Technica's actual approval matrix -- currently a placeholder |
 | TR-to-Expense Report reconciliation | Standard OOB | Partial reconciliation supported |
 | Per diem integration on TR | Standard OOB | Location-based per diem rates |
 
+**>> ATTENTION AREA: Workflow is a placeholder**
+> The suggested workflow (Employee -> Manager -> HR Manager) is not based on Technica's actual approval requirements. The document explicitly states "Technica needs to provide us with the updated workflow." This is a blocking item.
+
+**>> ATTENTION AREA: Per diem setup data is pending**
+> The FRD correctly identifies per diem configuration by country with hotel/meal/other breakdowns, but no rates are defined. Configuration cannot proceed without this data.
+
 **Recommendations:**
 
-1. **The suggested workflow (Employee -> Manager -> HR Manager) is a placeholder.** The document explicitly states "Technica needs to provide us with the updated workflow." This is a project risk -- workflow design affects security roles, approval hierarchies, and delegation rules. **Recommendation:** Escalate this as a blocking item. Do not proceed to configuration without confirmed workflows. Provide Technica with a workflow questionnaire covering:
+1. **>> ENHANCEMENT (CRITICAL):** Escalate workflow design as a blocking item. Do not proceed to configuration without confirmed workflows. Provide Technica with a workflow questionnaire covering:
    - Approval thresholds (e.g., < $1,000 = manager only, > $1,000 = manager + HR + CFO)
    - Delegation rules when approvers are absent
    - Whether the same workflow applies to all legal entities
    - Auto-approval rules (if any)
 
-2. **Per diem setup is pending Technica's internal policies.** The FRD correctly identifies per diem configuration by country with hotel/meal/other breakdowns, but no rates are defined. **Recommendation:** Provide Technica with the D365 per diem template (Excel export from Per Diem setup form) pre-populated with common countries and standard GSA/HMRC rates as a starting point. This accelerates data collection.
+2. **>> ENHANCEMENT (MEDIUM):** Provide Technica with the D365 per diem template (Excel export from Per Diem setup form) pre-populated with common countries and standard GSA/HMRC rates as a starting point. This accelerates data collection.
 
-3. **Travel Requisition reconciliation with Expense Reports** is a powerful standard feature that is well-described. The partial reconciliation capability (showing remaining amount to reconcile) is correctly documented. No changes needed here.
+3. Travel Requisition reconciliation with Expense Reports is a powerful standard feature that is well-described. The partial reconciliation capability (showing remaining amount to reconcile) is correctly documented. No changes needed here.
 
 ---
 
@@ -128,17 +179,17 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 
 **Recommendations:**
 
-1. **Cash advance account per currency is necessary but creates maintenance overhead.** For a company using "many currencies" (as stated), this means many GL accounts. **Recommendation:** Use a single cash advance control account with the currency as a financial dimension rather than separate accounts per currency -- **but only if Technica's chart of accounts supports this pattern.** If they must use separate accounts (common in Middle Eastern accounting practices), create a clear naming convention (e.g., 1310-USD, 1310-EUR, 1310-LBP) and document all accounts in a setup register.
+1. **>> ENHANCEMENT:** Cash advance account per currency is necessary but creates maintenance overhead. For a company using "many currencies" (as stated), this means many GL accounts. Use a single cash advance control account with the currency as a financial dimension rather than separate accounts per currency -- **but only if Technica's chart of accounts supports this pattern.** If they must use separate accounts (common in Middle Eastern accounting practices), create a clear naming convention (e.g., 1310-USD, 1310-EUR, 1310-LBP) and document all accounts in a setup register.
 
-2. **The employee-as-vendor setup is standard but requires governance.** Every employee with cash advance access must have a corresponding vendor record. **Recommendation:**
+2. **>> ENHANCEMENT (HIGH):** The employee-as-vendor setup is standard but requires governance. Every employee with cash advance access must have a corresponding vendor record.
    - Create vendors in a dedicated vendor group (e.g., "Employee Vendors") with restricted payment terms
    - Use a number sequence aligned with employee IDs for easy cross-reference
    - Add this to the employee onboarding/offboarding checklist -- new employee = create vendor; departing employee = settle all advances and inactivate vendor
    - Consider using the **D365 Employee Expense Vendor auto-creation** feature (available in recent builds) which auto-creates the vendor when the employee is first mapped
 
-3. **Manual vs. auto-post for cash advance journals.** The FRD correctly leaves this configurable. **Recommendation:** Start with manual posting (auto-post disabled) during go-live to allow the finance team to review entries. Switch to auto-post after 2-3 months of stable operation when the team is confident in the setup.
+3. **>> ENHANCEMENT (MEDIUM):** Manual vs. auto-post for cash advance journals. The FRD correctly leaves this configurable. Start with manual posting (auto-post disabled) during go-live to allow the finance team to review entries. Switch to auto-post after 2-3 months of stable operation when the team is confident in the setup.
 
-4. **The "paid" status transition should trigger a notification to the employee.** The current process relies on the employee checking the system. **Recommendation:** Add a Power Automate flow triggered on cash advance status change to "Paid" that sends an email/Teams notification to the employee. This is low-effort and high-value for user experience.
+4. **>> ENHANCEMENT (LOW):** The "paid" status transition should trigger a notification to the employee. The current process relies on the employee checking the system. Add a Power Automate flow triggered on cash advance status change to "Paid" that sends an email/Teams notification to the employee. This is low-effort and high-value for user experience.
 
 ---
 
@@ -168,19 +219,17 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 
 **Recommendations:**
 
-1. **Mobile expense submission (EM001-003) is FIT and should be prioritized.** The D365 Expense Management mobile app (available on iOS/Android) allows receipt scanning with OCR, automatic category suggestion, and on-the-go expense entry. **Recommendation:** Include mobile app setup and user training in the deployment plan. Specifically:
+1. **>> ENHANCEMENT (MEDIUM):** Mobile expense submission (EM001-003) is FIT and should be prioritized. The D365 Expense Management mobile app (available on iOS/Android) allows receipt scanning with OCR, automatic category suggestion, and on-the-go expense entry. Include mobile app setup and user training in the deployment plan. Specifically:
    - Configure the mobile workspace in F&O
    - Test OCR accuracy with Technica's common receipt types (Arabic/English receipts, multiple currencies)
    - Define whether mobile-submitted expenses still require desktop review before workflow submission
 
-2. **The cash advance return flow is well-designed** but the example only shows partial return. Document the full return scenario as well, and clarify what happens if the employee's expense report total exceeds the cash advance (i.e., the company owes the employee the difference). This is handled by standard AP settlement, but it should be explicitly documented for user training.
+2. The cash advance return flow is well-designed but the example only shows partial return. Document the full return scenario as well, and clarify what happens if the employee's expense report total exceeds the cash advance (i.e., the company owes the employee the difference). This is handled by standard AP settlement, but it should be explicitly documented for user training.
 
-3. **Project expense allocation (EM001-009) is correctly described** but lacks detail on:
-   - Which expense categories will be project-enabled (this depends on Technica's project cost structure from FRD04)
-   - Whether project budget checking applies to expenses (it should, if project budget control is enabled)
-   - How project financial dimensions interact with employee financial dimensions on the same transaction
+3. **>> ATTENTION AREA: Project expense allocation lacks detail**
+   > Project expense allocation (EM001-009) is correctly described but lacks detail on which expense categories will be project-enabled, whether project budget checking applies to expenses, and how project financial dimensions interact with employee financial dimensions on the same transaction.
 
-   **Recommendation:** Cross-reference with FRD04 (Project Accounting) to ensure expense categories used in projects align with project category groups. The expense category must exist in both Expense Management shared categories AND Project category configuration.
+   **>> ENHANCEMENT:** Cross-reference with FRD04 (Project Accounting) to ensure expense categories used in projects align with project category groups. The expense category must exist in both Expense Management shared categories AND Project category configuration.
 
 ---
 
@@ -196,6 +245,9 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 | **Dependencies** | FRD01 (CRM Trips entity), Integration architecture decision |
 
 **What is proposed:** CRM trip approval triggers creation of D365 F&O Travel Requisition.
+
+**>> ATTENTION AREA: Integration design needs architecture decision**
+> The proposed approach pushes partial data from CRM to F&O, leaving employees to re-enter line-level details. Multiple better options exist but all require the integration mechanism to be defined first.
 
 **Is there a better way?**
 
@@ -221,6 +273,9 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 
 **What is proposed:** Add a checkbox on expense report lines to flag expenses that should be charged to the customer. Technica currently debits these to an expense account and later issues a manual debit note to the customer.
 
+**>> ATTENTION AREA: Checkbox alone does not solve the billing problem**
+> The proposed checkbox flags the expense but does not define who creates the debit note, when, how the customer is identified on the expense line, or what GL accounts are involved in the clearing. Without end-to-end design, the checkbox is cosmetic.
+
 **Is there a better way?**
 
 | Option | Approach | Pros | Cons |
@@ -230,10 +285,12 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 | **C (Best for project expenses)** | Use Project billing rules for reimbursable expenses | Standard D365 project invoicing creates customer invoice automatically; full audit trail; integrates with FRD04 milestone/T&M billing | Only works for project-linked expenses; not suitable for non-project travel |
 | **D (Comprehensive)** | Combination: Project billing (Option C) for project expenses + Custom "Reimbursable" flag with Power Automate notification for non-project expenses | Covers both scenarios; automates where possible | More setup effort |
 
-**Recommendation:** Implement **Option D** as a phased approach:
+**>> ENHANCEMENT (HIGH):** Implement **Option D** as a phased approach:
 - **Phase 1 (Go-live):** For project-linked expenses, use the standard D365 Project billing mechanism -- expenses posted to a project can be invoiced to the customer via project invoice proposals. This is entirely standard and already supported by EM001-009.
 - **Phase 2 (Go-live):** For non-project reimbursable expenses, add a custom enum field (not just a checkbox) on the expense line with values: "Company Borne" (default), "Customer Reimbursable." Map this field to a specific GL account (e.g., "Customer Reimbursable Expenses - Clearing"). Add a **Power Automate flow** that triggers when an expense report with "Customer Reimbursable" lines is posted, sending a notification to the AR team with customer name, amount, and expense details.
 - **Phase 3 (Post go-live):** If volume warrants, build a periodic batch job that collects all "Customer Reimbursable" clearing account balances by customer and auto-creates AR free-text invoice proposals (debit notes) for review and posting.
+
+**>> ENHANCEMENT (MEDIUM):** Add Power Automate notification to AR team for reimbursable expenses to prevent missed invoicing -- this is the minimum viable automation for Phase 2.
 
 ---
 
@@ -242,28 +299,35 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 ### Expense Management Parameters
 - Ledger daily journal name for cash advance: Correctly identified as configurable
 - Post cash advance immediately: Correctly left as optional
-- **No mention of:** Expense policy configuration (per diem limits, receipt requirements, spending limits by category). This is a significant omission that depends on Technica's internal policies (listed as missing data item #2).
+
+**>> ATTENTION AREA: Expense policy configuration is missing**
+> No mention of expense policy configuration (per diem limits, receipt requirements, spending limits by category). This is a significant omission that depends on Technica's internal policies (listed as missing data item #2). Expense management without policies is just expense recording.
 
 ### Shared Categories / Expense Categories
 - Correctly described as mandatory setup
 - Expense type drives field behavior (per diem, hotel, airline) -- well-explained with examples
 - Payment method per category -- properly linked
-- **Missing:** Actual category list, GL account mapping, and sub-ledger posting profiles. These are listed as pending from Technica.
+
+**>> ATTENTION AREA: Category details pending**
+> Actual category list, GL account mapping, and sub-ledger posting profiles are missing. These are listed as pending from Technica.
 
 ### Per Diem Configuration
 - Country-based setup correctly described
 - Hotel/meal/other breakdown supported
-- **Recommendation:** Configure per diem reduction rules (e.g., if hotel is provided by company, reduce per diem by hotel portion). D365 supports automatic per diem reduction -- ensure this is configured to match Technica's policy.
+
+**>> ENHANCEMENT (MEDIUM):** Configure per diem reduction rules (e.g., if hotel is provided by company, reduce per diem by hotel portion). D365 supports automatic per diem reduction -- ensure this is configured to match Technica's policy.
 
 ### Cash Advance Accounts
 - Per-currency setup: Properly designed
 - Employee financial dimension: Confirmed as mandatory -- good governance decision
-- **Recommendation:** Document the full account structure in a setup workbook before configuration begins.
+
+**>> ENHANCEMENT:** Document the full account structure in a setup workbook before configuration begins.
 
 ### Worker Setup (Employee Financial Dimension + Vendor Mapping)
 - Financial dimension on worker employment record: Required for expense management -- correctly identified
 - Vendor mapping on worker: Required for cash advance payment -- correctly documented with step-by-step instructions
-- **Recommendation:** Create a checklist for HR/IT to ensure every expense-eligible employee has both the financial dimension AND vendor mapping configured before go-live. Missing either will cause transaction failures.
+
+**>> ENHANCEMENT (HIGH):** Create a checklist for HR/IT to ensure every expense-eligible employee has both the financial dimension AND vendor mapping configured before go-live. Missing either will cause transaction failures.
 
 ---
 
@@ -289,29 +353,35 @@ This is treated as a single process in the FRD. For clarity, this review breaks 
 
 ## Risk Flags
 
-1. **Eight missing data items from Technica.** The FRD explicitly lists 8 categories of data that Technica has not yet provided: workflows, internal policies, shared categories with accounts, per diem rates, cash advance accounts, payment methods, expense purposes/locations, and employee access lists. **This is the single biggest risk to this workstream.** Without this data, configuration cannot begin, and the design cannot be fully validated. Recommend a formal data collection deadline with escalation path.
+**>> ATTENTION AREA: Eight missing data items from Technica**
+> The FRD explicitly lists 8 categories of data that Technica has not yet provided: workflows, internal policies, shared categories with accounts, per diem rates, cash advance accounts, payment methods, expense purposes/locations, and employee access lists. **This is the single biggest risk to this workstream.** Without this data, configuration cannot begin, and the design cannot be fully validated.
 
-2. **CRM integration architecture is undefined across multiple FRDs.** FRD12's CRM Trip -> Travel Requisition integration depends on FRD01's custom Trip entity, which in turn has its own design questions (see FRD01 review). If FRD01's Trip entity design changes, FRD12's integration must change with it. These two FRDs must be designed together, not in isolation.
+1. **>> ENHANCEMENT (CRITICAL):** Recommend a formal data collection deadline with escalation path for the eight missing data items. Without this data, configuration cannot begin, and the design cannot be fully validated.
 
-3. **The "Charged to Customer" GAP has downstream implications not addressed.** The FRD describes the need but not the end-to-end flow. Who creates the debit note? When? How is the customer identified on the expense line? What GL accounts are involved in the clearing? Without answering these questions, the checkbox is cosmetic -- it flags the expense but does not solve the billing problem.
+**>> ATTENTION AREA: CRM integration architecture is undefined across multiple FRDs**
+> FRD12's CRM Trip -> Travel Requisition integration depends on FRD01's custom Trip entity, which in turn has its own design questions (see FRD01 review). If FRD01's Trip entity design changes, FRD12's integration must change with it. These two FRDs must be designed together, not in isolation.
 
-4. **Expense policy configuration is absent.** D365 F&O Expense Management supports robust policy rules:
-   - Maximum amount per expense category
-   - Receipt required above threshold amount
-   - Per diem limits by location
-   - Advance booking requirements for flights
-   - Non-compliant expense warnings vs. hard blocks
+2. **>> ENHANCEMENT:** Coordinate CRM integration architecture between FRD01 and FRD12 — these two FRDs must be designed together, not in isolation.
 
-   None of these are discussed in the FRD. This is a governance gap -- expense management without policies is just expense recording.
+**>> ATTENTION AREA: "Charged to Customer" GAP has downstream implications not addressed**
+> The FRD describes the need but not the end-to-end flow. Who creates the debit note? When? How is the customer identified on the expense line? What GL accounts are involved in the clearing? Without answering these questions, the checkbox is cosmetic -- it flags the expense but does not solve the billing problem.
 
-5. **No mention of intercompany expense handling.** If Technica has multiple legal entities (common in international manufacturing), employees traveling for one entity but employed by another will need intercompany expense allocation. This is standard in D365 but must be configured. Verify if this scenario applies.
+3. **>> ENHANCEMENT (HIGH):** Define the complete end-to-end flow for customer-reimbursable expenses, including customer identification, GL clearing accounts, debit note generation process, and AR team responsibilities.
 
-6. **Vendor settlement process for employee reimbursement is described but payment method is not.** After the expense report is posted and the vendor (employee) balance is updated, how is the employee actually paid? Options in D365:
-   - AP payment journal (manual)
-   - AP payment proposal (batch)
-   - Integration with payroll (add to next paycheck)
+**>> ATTENTION AREA: Expense policy configuration is absent**
+> D365 F&O Expense Management supports robust policy rules (maximum amount per expense category, receipt required above threshold amount, per diem limits by location, advance booking requirements for flights, non-compliant expense warnings vs. hard blocks). None of these are discussed in the FRD. This is a governance gap -- expense management without policies is just expense recording.
 
-   The FRD stops at "settle transactions" but does not describe the actual disbursement. This should be defined.
+4. **>> ENHANCEMENT (HIGH):** Define and configure expense policies once Technica provides internal policies. At minimum, configure receipt threshold requirements and per-category spending limits.
+
+**>> ATTENTION AREA: No mention of intercompany expense handling**
+> If Technica has multiple legal entities (common in international manufacturing), employees traveling for one entity but employed by another will need intercompany expense allocation. This is standard in D365 but must be configured.
+
+5. **>> ENHANCEMENT (MEDIUM):** Verify if intercompany expense scenario applies to Technica. If yes, configure intercompany expense allocation during setup.
+
+**>> ATTENTION AREA: Vendor settlement payment method is not defined**
+> After the expense report is posted and the vendor (employee) balance is updated, how is the employee actually paid? Options in D365: AP payment journal (manual), AP payment proposal (batch), or integration with payroll (add to next paycheck). The FRD stops at "settle transactions" but does not describe the actual disbursement.
+
+6. **>> ENHANCEMENT (MEDIUM):** Define the employee reimbursement disbursement process — whether via AP payment journal, payment proposal, or payroll integration. This should be documented and configured before go-live.
 
 ---
 
@@ -328,10 +398,18 @@ The Expense Management solution is **functionally adequate and makes appropriate
 - Per diem setup by country with hotel/meal/other breakdown follows best practice
 
 **What needs improvement:**
-- **CRM integration design is the weakest part** -- superficial description, undefined mechanism, incomplete field mapping, and no error handling. This must be elevated to a dedicated integration design document.
-- **The "Charged to Customer" GAP needs end-to-end design**, not just a checkbox. The debit note generation process must be defined and linked to the AR module.
-- **Expense policies are entirely absent.** This is a significant functional gap in the FRD itself -- Technica's internal policies should drive D365 policy configuration, and the FRD should at least outline the policy framework.
-- **The 8 missing data items from Technica** suggest the workshops were incomplete. A focused follow-up session is needed to collect this data before configuration begins.
+
+**>> ATTENTION AREA: CRM integration design is the weakest part**
+> Superficial description, undefined mechanism, incomplete field mapping, and no error handling. This must be elevated to a dedicated integration design document.
+
+**>> ATTENTION AREA: "Charged to Customer" GAP needs end-to-end design**
+> Not just a checkbox. The debit note generation process must be defined and linked to the AR module.
+
+**>> ATTENTION AREA: Expense policies are entirely absent**
+> This is a significant functional gap in the FRD itself -- Technica's internal policies should drive D365 policy configuration, and the FRD should at least outline the policy framework.
+
+**>> ATTENTION AREA: 8 missing data items suggest incomplete workshops**
+> A focused follow-up session is needed to collect this data before configuration begins.
 
 **Comparison with other FRDs in this set:** This FRD is **less mature than FRD04 (Project Accounting)** and **FRD07 (Procurement)**, which are more detailed and complete. It is comparable in maturity to FRD01 (Sales), which also has undefined integration architecture. The FRD reads more as a setup guide than a functional requirements document -- it explains how D365 works rather than specifying what Technica needs. The requirements table at the end (9 items) is thin relative to the process complexity.
 

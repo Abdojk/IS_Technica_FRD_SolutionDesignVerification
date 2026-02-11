@@ -7,6 +7,28 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | Cross-FRD Integration | Project capitalization to fixed asset process is completely missing — add FA-001-07 sub-process | [Integration with FRD04](#integration-with-frd04---project-accounting-investment-sub-projects) |
+| 2 | **CRITICAL** | FA-001-03 Acquisition | No capitalization threshold or low-value asset policy defined | [FA-001-03: Fixed Asset Acquisition](#fa-001-03-fixed-asset-acquisition) |
+| 3 | **HIGH** | FA-001-04 Depreciation | Undefined second depreciation book — resolve before UAT | [FA-001-04: Fixed Asset Depreciation](#fa-001-04-fixed-asset-depreciation) |
+| 4 | **HIGH** | FA-001-01 Creation via PO | Procurement category-to-FA group mapping deferred too late — complete during design phase | [FA-001-01: Fixed Asset Creation Automatic via PO Receipt](#fa-001-01-fixed-asset-creation-automatic-via-po-receipt) |
+| 5 | **HIGH** | FA-001-02 Manual Creation | Define explicit business rules for inventory-to-asset transfers (triggers, timeframe, approval) | [FA-001-02: Fixed Asset Creation Manually with Stocked Item](#fa-001-02-fixed-asset-creation-manually-with-stocked-item) |
+| 6 | **MEDIUM** | FA-001-03 Acquisition | Financial dimension enforcement should be mandatory on FA book, not fail at posting | [FA-001-03: Fixed Asset Acquisition](#fa-001-03-fixed-asset-acquisition) |
+| 7 | **MEDIUM** | FA-001-03 Acquisition | Define depreciation start date policy (acquisition date vs. put-in-service date) | [FA-001-03: Fixed Asset Acquisition](#fa-001-03-fixed-asset-acquisition) |
+| 8 | **MEDIUM** | FA-001-05 Disposal | Confirm partial disposal requirements | [FA-001-05: Fixed Asset Disposal](#fa-001-05-fixed-asset-disposal-sales--scrap) |
+| 9 | **MEDIUM** | FA-002 Reports | Build depreciation forecast and capex vs budget Power BI reports | [FA-002: Inquiries & Reports](#fa-002---inquiries--reports) |
+| 10 | **LOW** | Setup | Add Low-Value Assets group with immediate or accelerated write-off | [Fixed Asset Groups](#fixed-asset-groups) |
+| 11 | **LOW** | Setup | Clarify Vehicles vs Transportation Equipment groups — document classification criteria | [Fixed Asset Groups](#fixed-asset-groups) |
+
+**Totals:** 2 CRITICAL | 3 HIGH | 4 MEDIUM | 2 LOW
+
+---
+
 ## Executive Summary
 
 This FRD covers the Fixed Assets lifecycle for Technica International, spanning two main process areas: **FA-001 (Asset Creation to Acquisition to Disposal)** with six sub-processes, and **FA-002 (Inquiries & Reports)** with seven standard reports. The solution is **almost entirely FIT** -- every single requirement across both process areas maps to standard D365 F&O functionality with zero GAPs identified.
@@ -37,15 +59,19 @@ Overall assessment: **Functionally sound but incomplete. The solution works for 
 | Aspect | Rating | Comment |
 |--------|--------|---------|
 | FA parameter setup | Correct | Standard toggle for auto-creation |
-| Procurement category to FA group mapping | Correct | Data dependency on Technica team |
+| Procurement category to FA group mapping | **>> NEEDS REVIEW <<** | Data dependency on Technica team — deferred too late |
 | Asset creation on receipt | Standard OOB | Asset number generated at receipt |
 | Acquisition on invoice | Standard OOB | Proper two-step process |
 | Quantity handling explanation | Good | Important user-facing detail documented |
 | Purchase Requisition flag behavior | Good | Lock behavior when PR flag is not set is noted |
 
+**>> ATTENTION AREA: Procurement category mapping deferred to migration phase**
+
+> The FRD states the procurement category-to-FA group mapping will be provided "during the migration phase." This is too late. Incorrect or incomplete mappings will cause PO receipts to fail to create assets or to assign them to wrong groups. This mapping is a critical data dependency for the primary acquisition method.
+
 **Recommendations:**
 
-1. **Procurement category mapping is a critical data dependency.** The FRD states this will be provided "during the migration phase." This is too late. Incorrect or incomplete mappings will cause PO receipts to fail to create assets or to assign them to wrong groups. **Recommendation:** Complete this mapping during the design/build phase and validate it during Conference Room Pilot (CRP), not migration.
+1. **>> ENHANCEMENT:** **Procurement category mapping is a critical data dependency.** The FRD states this will be provided "during the migration phase." This is too late. Incorrect or incomplete mappings will cause PO receipts to fail to create assets or to assign them to wrong groups. **Recommendation:** Complete this mapping during the design/build phase and validate it during Conference Room Pilot (CRP), not migration.
 
 2. **The quantity behavior is a known user confusion point.** The FRD correctly documents that Q=3 on one line creates a single asset record. However, in practice, users frequently make this mistake when ordering multiple identical assets (e.g., 3 laptops). **Recommendation:** Add a validation or at minimum a warning message when a fixed-asset-flagged PO line has quantity > 1. Alternatively, document this clearly in the user training materials with worked examples.
 
@@ -68,13 +94,18 @@ Overall assessment: **Functionally sound but incomplete. The solution works for 
 | Inventory journal name setup | Correct | Journal type "Fixed asset" |
 | Inventory-to-FA journal process | Standard OOB | Stock reduction + asset acquisition |
 | Cost transfer accuracy | Good | Asset acquired at inventory cost |
+| Business rules for transfer triggers | **>> NEEDS IMPROVEMENT <<** | Vague criteria — "sometimes" is not a business rule |
 | Responsible person assignment | Noted | Post-acquisition assignment mentioned |
+
+**>> ATTENTION AREA: Undefined business rules for inventory-to-asset transfers**
+
+> The FRD language "sometimes they receive a product into the stock then move it as fixed asset" is vague. This process needs clearer business rules: Under what circumstances does this happen? Who decides? What is the approval process? Without clear criteria, items may sit in inventory indefinitely before being capitalized, creating accounting inaccuracies.
 
 **Recommendations:**
 
-1. **The "sometimes they receive a product into the stock then move it as fixed asset" language is vague.** This process needs clearer business rules: Under what circumstances does this happen? Who decides? What is the approval process? Without clear criteria, items may sit in inventory indefinitely before being capitalized, creating accounting inaccuracies. **Recommendation:** Define specific triggers (e.g., items above a capitalization threshold, items in specific procurement categories) and a maximum timeframe for the inventory-to-asset transfer.
+1. **>> ENHANCEMENT:** **The "sometimes they receive a product into the stock then move it as fixed asset" language is vague.** This process needs clearer business rules: Under what circumstances does this happen? Who decides? What is the approval process? Without clear criteria, items may sit in inventory indefinitely before being capitalized, creating accounting inaccuracies. **Recommendation:** Define specific triggers (e.g., items above a capitalization threshold, items in specific procurement categories) and a maximum timeframe for the inventory-to-asset transfer.
 
-2. **The FRD states "this process always starts by the project module."** This is a critical statement that is not elaborated. If stocked items destined for fixed assets flow through Project Accounting, this is directly related to the FRD04 investment sub-project process (project type "Investment" for asset capitalization). **Recommendation:** Explicitly define the end-to-end flow: Project PO receipt -> Inventory -> Project cost -> Asset capitalization. This cross-FRD linkage must be designed as a single integrated process.
+2. **>> ENHANCEMENT:** **The FRD states "this process always starts by the project module."** This is a critical statement that is not elaborated. If stocked items destined for fixed assets flow through Project Accounting, this is directly related to the FRD04 investment sub-project process (project type "Investment" for asset capitalization). **Recommendation:** Explicitly define the end-to-end flow: Project PO receipt -> Inventory -> Project cost -> Asset capitalization. This cross-FRD linkage must be designed as a single integrated process.
 
 3. **Valuation risk during the inventory holding period.** If an item sits in inventory for 10+ days before becoming a fixed asset, inventory costing adjustments during that period affect the final asset cost. **Recommendation:** Ensure FIFO/standard cost methodology is aligned and that the inventory-to-FA journal captures the correct cost at the time of transfer, not the original PO cost if adjustments have occurred.
 
@@ -95,16 +126,26 @@ Overall assessment: **Functionally sound but incomplete. The solution works for 
 |--------|--------|---------|
 | Acquisition journal workflow | Good | Proper segregation of duties |
 | Acquisition proposal (bulk) | Standard OOB | Efficient for mass acquisitions |
-| Financial dimension requirement | Critical | Must be filled for depreciation to post |
+| Financial dimension requirement | **>> NEEDS REVIEW <<** | Enforcement is reactive (fails at posting), not proactive |
+| Capitalization threshold | **>> NEEDS IMPROVEMENT <<** | Not defined — fundamental accounting policy missing |
+| Depreciation start date policy | **>> NEEDS REVIEW <<** | Not addressed — acquisition date vs. put-in-service date |
 | Balance inquiry after acquisition | Good | User verification step documented |
+
+**>> ATTENTION AREA: No capitalization threshold or low-value asset policy defined**
+
+> The FRD does not define a minimum value for capitalizing assets. Most jurisdictions and accounting policies have a threshold below which items are expensed directly. Without this, users will inconsistently capitalize or expense similar items, leading to audit findings.
+
+**>> ATTENTION AREA: Financial dimension enforcement is reactive, not proactive**
+
+> The FRD states that if dimensions are not filled, "the depreciation transaction will not get posted." This is a reactive control (fails at posting time) rather than a proactive one. The issue should be caught at data entry, not at depreciation time.
 
 **Recommendations:**
 
-1. **Financial dimension enforcement is critical but fragile as described.** The FRD states that if dimensions are not filled, "the depreciation transaction will not get posted." This is a reactive control (fails at posting time) rather than a proactive one. **Recommendation:** Configure the financial dimension framework to make the relevant dimensions (Department, Cost Center) **mandatory on the fixed asset book** form. This prevents the record from being saved without dimensions, catching the issue at data entry rather than at depreciation time.
+1. **>> ENHANCEMENT:** **Financial dimension enforcement is critical but fragile as described.** The FRD states that if dimensions are not filled, "the depreciation transaction will not get posted." This is a reactive control (fails at posting time) rather than a proactive one. **Recommendation:** Configure the financial dimension framework to make the relevant dimensions (Department, Cost Center) **mandatory on the fixed asset book** form. This prevents the record from being saved without dimensions, catching the issue at data entry rather than at depreciation time.
 
-2. **Missing: Capitalization threshold / low-value asset policy.** The FRD does not define a minimum value for capitalizing assets. Most jurisdictions and accounting policies have a threshold below which items are expensed directly. **Recommendation:** Define Technica's capitalization threshold (e.g., items below USD 500 or equivalent are expensed) and document how low-value assets are handled -- either as expense items or in a separate "Low-Value Assets" group with immediate or accelerated write-off.
+2. **>> ENHANCEMENT (CRITICAL):** **Missing: Capitalization threshold / low-value asset policy.** The FRD does not define a minimum value for capitalizing assets. Most jurisdictions and accounting policies have a threshold below which items are expensed directly. **Recommendation:** Define Technica's capitalization threshold (e.g., items below USD 500 or equivalent are expensed) and document how low-value assets are handled -- either as expense items or in a separate "Low-Value Assets" group with immediate or accelerated write-off.
 
-3. **Missing: Acquisition date vs. put-in-service date.** D365 supports separate acquisition date and depreciation start date. The FRD does not address whether assets start depreciating from the acquisition date, the receipt date, or a separate put-in-service date. For manufacturing equipment, the time between receipt and commissioning can be weeks or months. **Recommendation:** Define the depreciation start date policy and configure the depreciation convention accordingly (mid-month, full-month, actual date).
+3. **>> ENHANCEMENT:** **Missing: Acquisition date vs. put-in-service date.** D365 supports separate acquisition date and depreciation start date. The FRD does not address whether assets start depreciating from the acquisition date, the receipt date, or a separate put-in-service date. For manufacturing equipment, the time between receipt and commissioning can be weeks or months. **Recommendation:** Define the depreciation start date policy and configure the depreciation convention accordingly (mid-month, full-month, actual date).
 
 ---
 
@@ -128,12 +169,17 @@ Overall assessment: **Functionally sound but incomplete. The solution works for 
 | Manual override capability | Standard OOB | Adjusts remaining life amounts |
 | Workflow approval | Good | Proper control |
 | Financial dimension auto-population | Good | Reduces manual entry errors |
+| Second depreciation book | **>> NEEDS REVIEW <<** | Undefined — critical open item with cascading impact |
+
+**>> ATTENTION AREA: Undefined second depreciation book**
+
+> The FRD explicitly states: "The other book is still under checking internally by Technica finance manager and he shall get back to us with the findings." This is a significant open item. If it is a tax book, the posting layer configuration, depreciation profile, service lives, and posting profiles all need separate setup. If Technica's finance manager has not decided by the time configuration begins, it will cause rework.
 
 **Recommendations:**
 
 1. **"Straight Line Life Remaining" is appropriate for migrated assets but consider "Straight Line Service Life" for new assets.** The "Life Remaining" method calculates depreciation based on the net book value divided by the remaining useful life. This is ideal for migrated assets where the original cost, accumulated depreciation, and remaining life are known. However, for newly acquired assets, "Straight Line Service Life" (cost / total useful life) is more conventional and predictable. **Recommendation:** Evaluate whether both methods are needed -- one for migrated assets and one for new acquisitions -- or if "Life Remaining" is intentionally chosen for all assets.
 
-2. **The second depreciation book is undefined.** The FRD explicitly states: "The other book is still under checking internally by Technica finance manager and he shall get back to us with the findings." This is a significant open item. Common reasons for a second book include:
+2. **>> ENHANCEMENT:** **The second depreciation book is undefined.** The FRD explicitly states: "The other book is still under checking internally by Technica finance manager and he shall get back to us with the findings." This is a significant open item. Common reasons for a second book include:
    - Tax depreciation (different rates/methods from accounting)
    - IFRS vs. local GAAP differences
    - Management/internal reporting
@@ -169,13 +215,17 @@ Overall assessment: **Functionally sound but incomplete. The solution works for 
 | Scrap via disposal journal | Standard OOB | With workflow approval |
 | Sale via free text invoice | Standard OOB | Correct use of FTI for non-trade sales |
 | Posting profile for disposal accounts | Correct | Separate disposal P&L setup |
-| Full disposal (no partial) | Noted | See recommendation |
+| Full disposal (no partial) | **>> NEEDS REVIEW <<** | Partial disposal not addressed — see recommendation |
 | Status tracking (Scrapped/Sold) | Standard OOB | Automatic status update |
 | Gain/loss recognition | Standard OOB | Auto-calculated from NBV vs. sale price |
 
+**>> ATTENTION AREA: Partial disposal not addressed**
+
+> The FRD only covers full asset disposal. In manufacturing, partial disposals are common: selling one component of a production line, or scrapping a portion of a building. D365 supports partial disposal through "Disposal - sale" and "Disposal - scrap" transaction types with specific amounts.
+
 **Recommendations:**
 
-1. **Partial disposal is not addressed.** The FRD only covers full asset disposal. In manufacturing, partial disposals are common: selling one component of a production line, or scrapping a portion of a building. D365 supports partial disposal through "Disposal - sale" and "Disposal - scrap" transaction types with specific amounts. **Recommendation:** Confirm with Technica whether partial disposals occur and document the process if they do.
+1. **>> ENHANCEMENT:** **Partial disposal is not addressed.** The FRD only covers full asset disposal. In manufacturing, partial disposals are common: selling one component of a production line, or scrapping a portion of a building. D365 supports partial disposal through "Disposal - sale" and "Disposal - scrap" transaction types with specific amounts. **Recommendation:** Confirm with Technica whether partial disposals occur and document the process if they do.
 
 2. **Free text invoice for asset sale is correct but has a limitation.** Free text invoices do not support item numbers or sales tax groups from item masters. If Technica needs to charge VAT on asset sales (common in many jurisdictions), the tax group must be manually set on the FTI line. **Recommendation:** Configure a default sales tax group for asset disposal FTI lines or create a specific FTI template for asset sales.
 
@@ -231,10 +281,16 @@ Seven OOB reports/inquiries:
 | Fixed asset movements | Yes | Good | Addition/disposal/transfer summary |
 | Fixed asset statement | Yes | Good | NBV and accumulated depreciation |
 | Fixed asset insurance | Yes | Adequate | Requires insurance data maintenance |
+| Depreciation forecast report | No | **>> NEEDS IMPROVEMENT <<** | Missing — essential for budgeting |
+| Capex vs. budget report | No | **>> NEEDS IMPROVEMENT <<** | Missing — essential for capital planning |
+
+**>> ATTENTION AREA: Missing management reports for a manufacturing company**
+
+> The report scope covers only standard OOB reports. Key management reports for depreciation forecasting, NBV aging, and capital expenditure vs. budget are absent. These are essential for a manufacturing company's budgeting and capital planning processes.
 
 **Recommendations:**
 
-1. **Missing reports for a manufacturing company:**
+1. **>> ENHANCEMENT:** **Missing reports for a manufacturing company:**
    - **Asset register by location/department:** Critical for physical verification and departmental cost allocation. The standard listing report can be filtered but a dedicated view is more practical.
    - **Depreciation forecast/projection report:** Shows future depreciation expense by period. Essential for budgeting (cross-reference with FRD12 Budgeting).
    - **Asset NBV aging report:** Assets by age band showing NBV, useful for capital planning.
@@ -257,9 +313,9 @@ Nine groups defined: Computer Software, Constructions, Industrial Equipment, Ind
 | Groups are well-categorized for a manufacturing company | Adequate |
 | Each group has a unique number sequence | Good practice for asset identification |
 | Service life is defined per group (in years, supports decimals) | Standard approach |
-| Missing: "Low-Value Assets" group | **Add a group for assets below the capitalization threshold with a 1-year or immediate write-off life** |
+| Missing: "Low-Value Assets" group | **>> NEEDS IMPROVEMENT <<** **Add a group for assets below the capitalization threshold with a 1-year or immediate write-off life** |
 | Missing: "Leased Assets" group | If Technica has any operating/finance leases, a separate group is needed (IFRS 16 compliance) |
-| "Transportation Equipment" vs. "Vehicles" overlap | **Clarify the distinction** -- are vehicles for personnel transport and transportation equipment for goods? If so, document the classification criteria. |
+| "Transportation Equipment" vs. "Vehicles" overlap | **>> NEEDS REVIEW <<** **Clarify the distinction** -- are vehicles for personnel transport and transportation equipment for goods? If so, document the classification criteria. |
 
 ### Depreciation Profile
 
@@ -279,7 +335,7 @@ One confirmed book (AccDep - Accounting Depreciation). One undefined book pendin
 | Observation | Recommendation |
 |-------------|---------------|
 | AccDep book is properly configured | Good |
-| Second book is undefined | **Critical open item -- resolve before UAT** |
+| Second book is undefined | **>> NEEDS REVIEW <<** **Critical open item -- resolve before UAT** |
 | Posting layer not mentioned | Confirm AccDep posts to "Current" layer |
 | No tax book defined | If local tax depreciation rates differ from accounting rates, a tax book is required |
 
@@ -299,7 +355,9 @@ Single posting profile "ALL" applied across all books and groups.
 
 ### Integration with FRD04 - Project Accounting (Investment Sub-Projects)
 
-FRD04 explicitly describes the use of **"Investment" project type sub-projects** for tracking asset capitalization. This means project costs (labor, materials, expenses) accumulated on an investment sub-project are eventually capitalized as a fixed asset. This is a **critical integration point that FRD12 completely ignores.**
+**>> ATTENTION AREA: Project capitalization to fixed asset process is completely missing**
+
+> FRD04 explicitly describes the use of "Investment" project type sub-projects for tracking asset capitalization. This means project costs (labor, materials, expenses) accumulated on an investment sub-project are eventually capitalized as a fixed asset. This is the **single largest gap in the document** and must be addressed before go-live. Without it, project costs intended for capitalization will have no defined path into the fixed asset register.
 
 | Integration Point | Status in FRD12 | Risk |
 |-------------------|----------------|------|
@@ -308,7 +366,7 @@ FRD04 explicitly describes the use of **"Investment" project type sub-projects**
 | Capitalized cost calculation (which costs qualify) | Not mentioned | **Medium** -- accounting policy gap |
 | Asset group assignment for project-capitalized assets | Not mentioned | **Medium** -- classification gap |
 
-**Recommendation:** Add a new sub-process (FA-001-07) covering "Fixed Asset Acquisition from Project Capitalization" that defines:
+**>> ENHANCEMENT (CRITICAL):** Add a new sub-process (FA-001-07) covering "Fixed Asset Acquisition from Project Capitalization" that defines:
 - When an investment sub-project is complete, how is the fixed asset created?
 - Is it manual creation + acquisition journal, or does D365's "Fixed asset - credit project" estimate mechanism handle it?
 - Which project cost categories are capitalizable (labor, materials, overhead)?

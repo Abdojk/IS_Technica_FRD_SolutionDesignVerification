@@ -7,6 +7,36 @@
 
 ---
 
+## ENHANCEMENT SUMMARY
+
+> The table below lists all areas requiring attention, their severity, and where to find them in this document.
+
+| # | Severity | Process / Area | Enhancement | Section |
+|---|----------|---------------|-------------|---------|
+| 1 | **CRITICAL** | SY001 - Legal Entities | "Technica ND" fictitious entity for non-declared transactions — compliance/legal/audit risk | [SY001 - Legal Entities](#sy001---legal-entities) |
+| 2 | **CRITICAL** | GL006 - Tax | AR-side VAT dual-rate customization is highest-risk item — needs extensive testing for credit notes, partial payments, prepayments | [GL006 - Tax](#gl006---tax) |
+| 3 | **HIGH** | SY003 - Currencies | Automate exchange rate feeds now, not as future enhancement — manual entry is error-prone in volatile market | [SY003 - Currencies](#sy003---currencies--currency-exchange-rates) |
+| 4 | **HIGH** | SY003 - Currencies | Create explicit exchange rate type matrix (which rate for which transaction type) | [SY003 - Currencies](#sy003---currencies--currency-exchange-rates) |
+| 5 | **HIGH** | GL001 - COA | Remove Customer as financial dimension on AR control accounts — use sub-ledger reporting instead | [GL001 - COA](#gl001---create-a-ledger-account-number-coa) |
+| 6 | **HIGH** | GL007 - Month End | Add inventory close as mandatory step in month-end checklist — missing for manufacturing company | [GL007 - Month End Close](#gl007---month-end-close) |
+| 7 | **HIGH** | GL014 - Consolidation | Use same COA across all entities to simplify consolidation | [GL014 - Consolidation](#gl014---consolidation--elimination-process) |
+| 8 | **HIGH** | BA001 - Bank Mgmt | Prioritize MT940 for high-volume banks — start bank testing immediately (go-live risk) | [BA001 - Bank Management](#ba001---bank-management-and-reconciliation) |
+| 9 | **MEDIUM** | SY003 - Currencies | Increase penny difference threshold beyond 0.100 for LBP environment | [SY003 - Currencies](#sy003---currencies--currency-exchange-rates) |
+| 10 | **MEDIUM** | GL001 - COA | Make Department and Business Unit mandatory on P&L accounts | [GL001 - COA](#gl001---create-a-ledger-account-number-coa) |
+| 11 | **MEDIUM** | GL002 - Account Structures | Simplify to single account structure with optional dimensions | [GL002 - Account Structures](#gl002---createupdate-main-account-structure) |
+| 12 | **MEDIUM** | GL003 - Journals | Enable basic journal controls from go-live (account type restrictions) | [GL003 - Journals](#gl003---create-gl-journal-and-adjustments) |
+| 13 | **MEDIUM** | GL003 - Journals | Restrict exchange rate override on journals with threshold-based workflow | [GL003 - Journals](#gl003---create-gl-journal-and-adjustments) |
+| 14 | **MEDIUM** | GL007 - Month End | Use Financial Period Close workspace for structured close checklist | [GL007 - Month End Close](#gl007---month-end-close) |
+| 15 | **MEDIUM** | GL008 - Year End | Define dimension handling on year-end close (carry forward vs. collapse) | [GL008 - Year End Close](#gl008---year-end-close) |
+| 16 | **MEDIUM** | GL013 - Intercompany | Build intercompany reconciliation report (Power BI or Management Reporter) | [GL013 - Intercompany](#gl013---intercompany-transactions) |
+| 17 | **MEDIUM** | BA001 - Bank Mgmt | Design tiered matching rules for auto-reconciliation | [BA001 - Bank Management](#ba001---bank-management-and-reconciliation) |
+| 18 | **MEDIUM** | BA001 - Bank Mgmt | Verify post-dated check requirement and configure if needed | [BA001 - Bank Management](#ba001---bank-management-and-reconciliation) |
+| 19 | **LOW** | BA001 - Bank Mgmt | Implement tiered reconciliation approval based on account materiality | [BA001 - Bank Management](#ba001---bank-management-and-reconciliation) |
+
+**Totals:** 2 CRITICAL | 6 HIGH | 9 MEDIUM | 1 LOW (+ 1 GAP: GL006-002)
+
+---
+
 ## Executive Summary
 
 This FRD covers the financial backbone of Technica International's D365 F&O implementation: General Ledger setup, Chart of Accounts, Financial Dimensions, Journal processing, Tax, Period Close, Foreign Currency Revaluation, Intercompany Accounting, Consolidation & Elimination, and Cash & Bank Management including both manual and advanced bank reconciliation. The document spans **16 business processes** (SY001-SY003, GL001-GL014, BA001-BA002) with a total of **47 requirements**.
@@ -33,12 +63,16 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 |--------|--------|---------|
 | Main entity structure (TI SAL + Offshore) | Good | Clear separation of operational and trading entities |
 | Holding company | Acceptable | Low activity; standard consolidation target |
-| Technica ND (fictitious entity) | Risk Flag | Non-declared transactions in an ERP raise audit and compliance concerns |
+| Technica ND (fictitious entity) | **>> RISK FLAG <<** | Non-declared transactions in an ERP raise audit and compliance concerns |
 | Other entities | Unclear | "Having operations with no stock" needs clearer definition |
+
+**>> ATTENTION AREA: Fictitious entity for non-declared transactions**
+
+> Having a "fictitious company used for non-declared transactions" inside D365 F&O creates an auditable trail of transactions that are by definition not declared. This raises serious compliance and legal concerns.
 
 **Recommendations:**
 
-1. **Technica ND entity is a significant red flag.** Having a "fictitious company used for non-declared transactions" inside D365 F&O creates an auditable trail of transactions that are by definition not declared. If Technica proceeds, this entity should have extremely restricted access, separate number sequences, and the accounting team must understand that D365 maintains full audit logs. **Recommendation:** Discuss with Technica's legal/compliance team whether this entity should exist in D365 at all. If it must, ensure proper segregation and access controls.
+1. **>> ENHANCEMENT (CRITICAL):** Technica ND entity is a significant red flag. Having a "fictitious company used for non-declared transactions" inside D365 F&O creates an auditable trail of transactions that are by definition not declared. If Technica proceeds, this entity should have extremely restricted access, separate number sequences, and the accounting team must understand that D365 maintains full audit logs. **Recommendation:** Discuss with Technica's legal/compliance team whether this entity should exist in D365 at all. If it must, ensure proper segregation and access controls.
 
 2. **Entity count affects licensing and consolidation complexity.** Each legal entity requires its own ledger, COA assignment, number sequences, and period close procedures. Ensure the total entity count is finalized before go-live to avoid rework. The FRD mentions entities may be consolidated during migration.
 
@@ -90,12 +124,16 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 | LBP as base / USD as reporting | Appropriate | Reflects legal requirement to report in LBP |
 | 3 decimal precision | Standard | Adequate for LBP and USD |
 | Custom exchange rate type "Tech" | Acceptable | Allows Technica-specific rates separate from system default |
-| Manual rate entry | Risky | Error-prone for daily operations in volatile currency market |
-| Penny difference at 0.100 | Needs Review | May be too tight given LBP/USD volatility |
+| Manual rate entry | **>> RISKY <<** | Error-prone for daily operations in volatile currency market |
+| Penny difference at 0.100 | **>> NEEDS REVIEW <<** | May be too tight given LBP/USD volatility |
+
+**>> ATTENTION AREA: Multi-rate currency environment is exceptionally complex**
+
+> Lebanon operates with multiple exchange rates (official BdL rate, Sayrafa/platform rate, parallel/black-market rate). The FRD does not clearly define which rate type is used for which transaction type.
 
 **Recommendations:**
 
-1. **The Lebanese currency environment is exceptionally complex.** Lebanon effectively operates with multiple exchange rates (official BdL rate, Sayrafa/platform rate, parallel/black-market rate). The FRD acknowledges this ("black market rate," "Sayrafa rate," "fresh dollar") but does not clearly define which rate type is used for which transaction type. **Recommendation:** Create an explicit exchange rate type matrix:
+1. **>> ENHANCEMENT:** The Lebanese currency environment is exceptionally complex. Lebanon effectively operates with multiple exchange rates (official BdL rate, Sayrafa/platform rate, parallel/black-market rate). The FRD acknowledges this ("black market rate," "Sayrafa rate," "fresh dollar") but does not clearly define which rate type is used for which transaction type. **Recommendation:** Create an explicit exchange rate type matrix:
 
    | Transaction Type | Rate Type | Source |
    |-----------------|-----------|--------|
@@ -104,9 +142,9 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
    | VAT calculation | Official 15,000 LBP | Fixed parameter |
    | Reporting currency translation | Daily market rate | Manual / API |
 
-2. **Automate exchange rate feeds as early as possible** rather than treating it as a "future enhancement." In a multi-rate environment with 38 bank accounts in 4 currencies, manual rate entry is a significant operational bottleneck and error source. D365 supports exchange rate providers (ECB, CBRF, etc.) OOB. For the Lebanese parallel rate, a Power Automate flow pulling from a trusted source and pushing to D365 via Data Entity is straightforward.
+2. **>> ENHANCEMENT:** Automate exchange rate feeds as early as possible rather than treating it as a "future enhancement." In a multi-rate environment with 38 bank accounts in 4 currencies, manual rate entry is a significant operational bottleneck and error source. D365 supports exchange rate providers (ECB, CBRF, etc.) OOB. For the Lebanese parallel rate, a Power Automate flow pulling from a trusted source and pushing to D365 via Data Entity is straightforward.
 
-3. **Penny difference of 0.100 may cause posting failures** when LBP amounts are involved. With LBP base currency, rounding differences on large transactions can easily exceed 0.100. Monitor this during UAT and be prepared to increase it. For context, many Lebanese implementations use penny differences of 1.000 or higher.
+3. **>> ENHANCEMENT:** Penny difference of 0.100 may cause posting failures when LBP amounts are involved. With LBP base currency, rounding differences on large transactions can easily exceed 0.100. Monitor this during UAT and be prepared to increase it. For context, many Lebanese implementations use penny differences of 1.000 or higher.
 
 4. **Reporting currency (USD) implications are significant.** Every posted transaction generates both LBP and USD accounting entries. This is correct for dual-reporting, but Technica must understand that the reporting currency rate applies at the time of posting and cannot be retroactively changed without reversal. If the market rate fluctuates significantly intraday, the posting time matters.
 
@@ -128,20 +166,20 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 | Main account setup attributes | Standard OOB | All standard fields utilized |
 | Consolidation account mapping | Good | Essential for GL014 consolidation process |
 | Suspending inactive accounts | Good practice | Prevents erroneous postings |
-| Customer as financial dimension on AR | Creative but risky | See recommendation below |
+| Customer as financial dimension on AR | **>> RISKY <<** | See recommendation below |
 | Financial dimension from table (auto) | Standard OOB | Workers, Customers, Vendors auto-populated |
 | Custom dimensions (manual) | Standard OOB | Department, Business Unit maintained manually |
 
 **Recommendations:**
 
-1. **Customer as a mandatory financial dimension on AR control accounts is unconventional and problematic.** The stated goal is to extract trial balance by account by project by customer. However:
+1. **>> ENHANCEMENT:** Customer as a mandatory financial dimension on AR control accounts is unconventional and problematic. The stated goal is to extract trial balance by account by project by customer. However:
    - D365 already tracks customers at the sub-ledger level on AR transactions. The Customer is always available on the AR transaction line.
    - Adding Customer as a financial dimension on the control account creates a **dimensional explosion** — every new customer creates a new dimension value, and every AR posting must include the customer dimension.
    - This makes the trial balance excessively granular and complicates reconciliation.
    - **Better alternative:** Use the standard **Customer transaction list** and **Aged receivables** reports, which natively break down by customer without needing a financial dimension. For combined project-customer analysis, use **Power BI** connecting project invoices to customer data.
    - If Technica absolutely needs customer on the trial balance, consider making it a **derived financial dimension** that auto-populates from the sub-ledger rather than a manually-entered dimension.
 
-2. **Financial dimensions confirmed as "optional only" (not mandatory on any account).** While this reduces posting friction, it also means dimension values can be omitted, leading to "blank" dimension entries that make reporting incomplete. **Recommendation:** At minimum, make Department and Business Unit mandatory on P&L accounts (expenses and revenue). This ensures cost center reporting is always complete. Use default financial dimension templates on journal names to reduce manual entry burden.
+2. **>> ENHANCEMENT:** Financial dimensions confirmed as "optional only" (not mandatory on any account). While this reduces posting friction, it also means dimension values can be omitted, leading to "blank" dimension entries that make reporting incomplete. **Recommendation:** At minimum, make Department and Business Unit mandatory on P&L accounts (expenses and revenue). This ensures cost center reporting is always complete. Use default financial dimension templates on journal names to reduce manual entry burden.
 
 3. **The COA numbering scheme uses 7-digit account numbers** (e.g., 1122010, 5120030, 6262000). This is adequate. Ensure the numbering has sufficient gaps between ranges for future accounts. The structure appears to follow:
    - 1xxxxxx = Assets
@@ -171,14 +209,14 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 
 | Aspect | Rating | Comment |
 |--------|--------|---------|
-| Multiple account structures | Concern | 4+ structures add validation complexity |
+| Multiple account structures | **>> NEEDS REVIEW <<** | 4+ structures add validation complexity |
 | Advanced Rules for exceptions | Acceptable | Needed for edge cases |
 | Access control on structure form | Excellent | Only senior finance staff can modify |
 | No mandatory dimensions | Risk | See GL001 recommendations |
 
 **Recommendations:**
 
-1. **Simplify account structures.** Having 4+ account structures means the system must validate each transaction against the correct structure, and users must understand which structure applies to which account range. In practice, **a single account structure with optional dimensions works better** for most implementations. Design:
+1. **>> ENHANCEMENT:** Simplify account structures. Having 4+ account structures means the system must validate each transaction against the correct structure, and users must understand which structure applies to which account range. In practice, **a single account structure with optional dimensions works better** for most implementations. Design:
    - One structure: Main Account + Business Unit + Department + Project (all optional)
    - Use Advanced Rules only for the truly exceptional cases (e.g., 40110002 needing Legal Entity dimension)
    - This simplifies maintenance and reduces user confusion
@@ -209,12 +247,12 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 | Attachment capability | Standard OOB | Already available |
 | Three-currency visibility | Standard OOB | Critical for Lebanese operations |
 | Manual rate override | Available OOB | Use with caution |
-| No posting restrictions initially | Acceptable | Can enable later as controls mature |
+| No posting restrictions initially | **>> NEEDS REVIEW <<** | Can enable later as controls mature |
 | Voucher handling scenarios | Well-documented | Clears up common confusion |
 
 **Recommendations:**
 
-1. **Reconsider the decision to skip posting restrictions and journal controls.** While the FRD acknowledges these features exist, Technica chose not to use them. For a company with multiple entities and intercompany transactions, journal controls provide critical guardrails:
+1. **>> ENHANCEMENT:** Reconsider the decision to skip posting restrictions and journal controls. While the FRD acknowledges these features exist, Technica chose not to use them. For a company with multiple entities and intercompany transactions, journal controls provide critical guardrails:
    - AP journals should not allow customer accounts
    - AR journals should not allow vendor accounts
    - Bank journals should only allow bank main accounts as offset
@@ -312,9 +350,9 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 |--------|--------|---------|
 | Standard VAT setup (tax codes, groups) | Standard OOB | No issues |
 | Poland localization for AP VAT | Creative workaround | Known solution for multi-rate VAT |
-| AR-side customization for B2B invoices | GAP - Complex | Dual-rate calculation on single invoice |
+| AR-side customization for B2B invoices | **>> GAP - COMPLEX <<** | Dual-rate calculation on single invoice |
 | Settlement with exchange differences | Technically correct | But generates high volume of exchange entries |
-| Customer statement modification | GAP - Medium | Report customization |
+| Customer statement modification | **>> GAP - MEDIUM <<** | Report customization |
 
 **GAP Analysis: GL006-002 - VAT Exchange Rate Issue**
 
@@ -325,11 +363,15 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 | **Volume Impact** | Every B2B USD invoice generates dual-rate accounting |
 | **Testing Effort** | Extensive - must cover invoicing, settlement, partial payment, credit notes |
 
+**>> ATTENTION AREA: AR-side VAT dual-rate customization is highest-risk item**
+
+> This customization must intercept the sales invoice posting routine to split the accounting entry into two rate calculations on the same voucher. Affects every B2B USD sales invoice, credit notes, partial payments, and all downstream reports.
+
 **Recommendations:**
 
-1. **The Poland localization for AP is a proven workaround** used across Middle Eastern and African D365 implementations where official vs. market rates diverge. This is an acceptable approach. However, **document extensively** that Poland localization is enabled and why, so future support teams understand the configuration rationale.
+1. The Poland localization for AP is a proven workaround used across Middle Eastern and African D365 implementations where official vs. market rates diverge. This is an acceptable approach. However, **document extensively** that Poland localization is enabled and why, so future support teams understand the configuration rationale.
 
-2. **The AR-side customization is the highest-risk item in this FRD.** The customization must intercept the sales invoice posting routine to split the accounting entry into two rate calculations on the same voucher. Specific concerns:
+2. **>> ENHANCEMENT (CRITICAL):** The AR-side customization is the highest-risk item in this FRD. The customization must intercept the sales invoice posting routine to split the accounting entry into two rate calculations on the same voucher. Specific concerns:
    - **Credit note handling:** When a B2B USD sales order is credited, the customization must reverse using the original rates (not current rates). Ensure this is in scope.
    - **Partial payments:** If a customer pays 50% of an invoice, the system must correctly split the settlement between the revenue portion (at black-market rate) and the VAT portion (at 15,000 LBP). This is non-trivial.
    - **Reporting:** The customization changes how accounting entries look on the voucher. Ensure all downstream reports (trial balance, AR aging, tax reports) still work correctly.
@@ -388,7 +430,7 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
    9. Generate financial statements
    10. Set period to "Hold"
 
-3. **Inventory close is missing from the checklist.** The FRD mentions "Potential conflicts - inventory and general ledger report" but does not explicitly list running inventory close/recalculation. For a manufacturing company like Technica, inventory close is critical for accurate COGS. **Add inventory close as a mandatory step before GL close.**
+3. **>> ENHANCEMENT:** Inventory close is missing from the checklist. The FRD mentions "Potential conflicts - inventory and general ledger report" but does not explicitly list running inventory close/recalculation. For a manufacturing company like Technica, inventory close is critical for accurate COGS. **Add inventory close as a mandatory step before GL close.**
 
 4. **"Accrued purchases excluding sales tax report"** for received-not-invoiced is essential. Ensure this is reconciled every month, as large GRNI balances are a common audit finding.
 
@@ -650,14 +692,14 @@ Key concerns center around: (1) the **dual-rate currency environment** unique to
 
 **Recommendations:**
 
-1. **38 bank accounts is a large number to reconcile.** Prioritize which banks will use MT940 (advanced reconciliation) and which will remain manual. **Recommendation:** Focus MT940 implementation on the highest-volume banks first (likely Audi, BLOM, SGBL, Bemo). The Banorient France accounts may already support MT940 natively (SEPA region).
+1. **>> ENHANCEMENT:** 38 bank accounts is a large number to reconcile. Prioritize which banks will use MT940 (advanced reconciliation) and which will remain manual. **Recommendation:** Focus MT940 implementation on the highest-volume banks first (likely Audi, BLOM, SGBL, Bemo). The Banorient France accounts may already support MT940 natively (SEPA region).
 
 2. **The bank account numbering scheme (51xxxxx) should be verified.** As noted in GL001, bank accounts in the 5-series is unusual. In D365, the main account on the bank account record defines where bank transactions post. Ensure these accounts:
    - Have the correct main account type (Balance Sheet - Asset for regular banks, or Liability for overdraft accounts like "BLOM USD O/D Account")
    - Are flagged for foreign currency revaluation (for non-LBP accounts)
    - Are NOT flagged for GL foreign currency revaluation (to avoid duplication, as noted in GL011)
 
-3. **MT940 dependency on banks is a go-live risk.** The FRD correctly notes that "Technica team should collaborate with their banks to get MT940 format." Lebanese banks vary in their electronic banking capabilities. **Recommendation:** Start MT940 testing with banks immediately — do not wait for migration phase. If a bank cannot provide MT940, consider:
+3. **>> ENHANCEMENT:** MT940 dependency on banks is a go-live risk. The FRD correctly notes that "Technica team should collaborate with their banks to get MT940 format." Lebanese banks vary in their electronic banking capabilities. **Recommendation:** Start MT940 testing with banks immediately — do not wait for migration phase. If a bank cannot provide MT940, consider:
    - BAI2 format (some banks support this)
    - CSV import with custom format mapping (D365 supports configurable bank statement formats via Electronic Reporting)
    - Continue with manual reconciliation for that bank
